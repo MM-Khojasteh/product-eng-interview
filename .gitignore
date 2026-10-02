@@ -1,0 +1,136 @@
+# ==========================================================================
+# Torob Travel — strict public-repo policy (least privilege)
+#
+# ONLY source code, public documentation, and explicit public configuration
+# may be committed. Everything else — secrets, private materials, caches,
+# build output, local state — is ignored. Check the matched-but-unexpected
+# with:  git status --porcelain
+# ==========================================================================
+
+# ── 1. SECRETS & ENVIRONMENT — checked first, never commit ─────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+*.crt
+*.secrets
+secrets*.yml
+credentials*.json
+service-account*.json
+
+# ── 2. PRIVATE WORKING MATERIALS — never publish (IP) ──────────────────────
+# Internal blueprint, reverse-engineering research, design-system capture,
+# working notes, verification screenshots, agent state.
+docs/
+research/
+torob-design-capture/
+notes - Ticket/
+notes - Itinerary Planner/
+verification-artifacts/
+.claude/
+.verify/
+
+# Duplicate source artwork; the served copy is under src/app/static/icon/
+/icon/
+
+# ── 3. PYTHON — bytecode, caches, tooling state ────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pytype/
+.pyre/
+.cache/
+.hypothesis/
+.tox/
+.nox/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# ── 4. PYTHON — build & packaging output ───────────────────────────────────
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+wheels/
+.installed.cfg
+
+# ── 5. VIRTUAL ENVIRONMENTS ────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── 6. FRONTEND TOOLING (tailwind via npx — no JS project expected) ────────
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ── 7. BROWSER TEST OUTPUT ─────────────────────────────────────────────────
+playwright-report/
+test-results/
+blob-report/
+
+# ── 8. LICENSED FONT BINARIES — do not redistribute ────────────────────────
+# IRANYekanX is a licensed third-party typeface; the woff2 must not be
+# redistributed in a public repository. static/fonts/README.md explains how
+# to restore it locally; the UI falls back gracefully without it.
+static/fonts/*.woff2
+static/fonts/*.woff
+static/fonts/*.ttf
+static/fonts/*.otf
+static/fonts/*.eot
+
+# ── 9. RUNTIME ARTIFACTS — logs, spool, local data ─────────────────────────
+*.log
+logs/
+*.tmp
+*.temp
+*.pid
+.spool/
+*.sqlite
+*.sqlite3
+*.db
+core
+*.stackdump
+*.hprof
+
+# ── 10. LOCAL DEVELOPMENT LAUNCHERS ────────────────────────────────────────
+/setup.bat
+/setup.sh
+
+# ── 11. OS-GENERATED FILES ─────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trash-*
+Thumbs.db
+Thumbs.db:ignore
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+~$*
+
+# ── 12. IDE / EDITOR CONFIGURATION ─────────────────────────────────────────
+.idea/
+.vscode/
+*.code-workspace
+.history/
+.fleet/
