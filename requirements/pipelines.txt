@@ -1,0 +1,7 @@
+# Flight ingestion pipeline (worker · normalizer · db-sink · liveness)
+# all ship win_amd64 / manylinux / macOS wheels — no librdkafka/libpq build step
+requests>=2.32,<3
+confluent-kafka>=2.6,<3
+psycopg2-binary>=2.9,<3
+redis>=5,<6
+orjson>=3.9      # fast quote_value encode; stdlib fallback when absent

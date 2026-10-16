@@ -1,0 +1,36 @@
+{# ── ds-flight-segment — the departure→arrival block with the rotated plane
+      (departure time · origin code — duration over the dashed rule —
+      arrival time · destination code). Shared by the results card and the
+      PDP summary; per-site sizes ride utilities beside the classes:
+        seg_variant="card"  text-xl/leading-6 times · h-3.5 plane · min-w-[72px]
+        seg_variant="pdp"   text-[26px]/leading-8 times · h-4 plane ·
+                           min-w-[90px] · mt-1 font-medium codes · the
+                           seats-scarcity line under the rule
+      seg_extra (opt)      per-site utilities beside the block class (the PDP
+                           passes mt-5 — the block sits under the airline row)
+      Expects `flight` in the calling context. ── #}
+{% set seg_time = 'text-[26px] leading-8' if seg_variant == 'pdp' else 'text-xl leading-6' %}
+{% set seg_code = 'mt-1 font-medium' if seg_variant == 'pdp' else 'mt-0.5' %}
+{% set seg_mid = 'min-w-[90px]' if seg_variant == 'pdp' else 'min-w-[72px]' %}
+{% set seg_plane = 'h-4 w-4' if seg_variant == 'pdp' else 'h-3.5 w-3.5' %}
+<div class="ds-flight-segment {{ seg_extra | default('') }}">
+  <div class="text-center">
+    <p class="ds-flight-segment__time {{ seg_time }}">{{ flight.departs | fa_num }}</p>
+    <p class="ds-flight-segment__code {{ seg_code }}">{{ flight.origin }}</p>
+  </div>
+  <div class="{{ seg_mid }} flex-1">
+    <p class="ds-flight-segment__duration">{{ flight.duration_text }}</p>
+    <div class="ds-flight-segment__rule" aria-hidden="true">
+      <span class="h-px flex-1 bg-line"></span>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-1.5 {{ seg_plane }} rotate-[225deg] text-muted"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
+      <span class="h-px flex-1 bg-line"></span>
+    </div>
+    {% if seg_variant == 'pdp' and 0 < flight.seats_left <= 9 %}
+    <p class="mt-1.5 text-center text-[11px] font-bold text-brand">فقط {{ flight.seats_left | fa_num }} صندلی باقی مانده</p>
+    {% endif %}
+  </div>
+  <div class="text-center">
+    <p class="ds-flight-segment__time {{ seg_time }}">{{ flight.arrives | fa_num }}</p>
+    <p class="ds-flight-segment__code {{ seg_code }}">{{ flight.destination }}</p>
+  </div>
+</div>

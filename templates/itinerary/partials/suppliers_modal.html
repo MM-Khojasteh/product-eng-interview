@@ -1,0 +1,98 @@
+{# ── The «تأمین‌کنندگان» breakdown modal — the seller-list half of the budget
+      card's ds-price-highlight (the capture's PDP anatomy pairs the red
+      price box with ds-seller-summary + ds-seller-list;
+      torob-design-system.html). Static markup + static_modal.js behaviour
+      (open / X / backdrop / Escape) — unlike the flight Compare modal there
+      is no live Redis read to make: itinerary floors are build-time facts,
+      so the page render IS the fresh data. One row per buyable stop
+      (redirect_url ⇔ has_ticket, priced or not): POI tile + name + day chip
+      | کف قیمت + the same tile-is-the-link supplier handoff the stop cards
+      use (supplier_of — the AGENCIES registry; unknown hosts keep the
+      red-gradient fallback so the handoff never disappears).
+      Geometry (user direction, 2026-10-10): the dialog must READ as
+      floating mid-page — the clamp keeps ≥80px backdrop above and below on
+      every viewport (the Compare modal's 100vh-32px nearly fills short
+      laptop viewports, which reads as anchored to the top, not centered);
+      on tall screens the dialog never exceeds 600px. ── #}
+<div id="suppliers-modal" class="ds-modal-backdrop grid hidden" data-modal-root>
+  <div role="dialog" aria-modal="true" aria-label="خرید بلیت تفریحات"
+       class="fade-in flex max-h-[min(600px,calc(100vh-160px))] w-[min(500px,100%)] flex-col overflow-hidden ds-modal">
+
+    <div class="ds-modal__header px-5 py-4">
+      <div>
+        <h2 class="ds-modal__title text-[15px]">تأمین‌کنندگان تفریحات {{ city.name_fa }}</h2>
+        <p class="mt-0.5 text-[11px] text-muted">
+          {{ buyable_stops | length | fa_num }} جاذبهٔ بلیت‌دار از {{ place_count | fa_num }} مکان برنامه · خرید مستقیم از سایت فروشنده
+        </p>
+      </div>
+      <button type="button" aria-label="بستن" data-modal-close
+              class="ds-modal__close text-ink">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="ds-modal__body content-start gap-3 overflow-y-auto p-5">
+
+      {% if ticketed_places %}
+      {# the roll-up again, inside the buying moment — same numbers, same
+         idiom as the card beside the h1 (offers-modal header parity) ── #}
+      <div class="ds-price-highlight">
+        <span class="ds-price-highlight__label">جمع کف قیمت تفریحات</span>
+        <strong class="ds-price-highlight__amount text-[22px]">{{ ticketed_places | sum(attribute="lowest_price") | toman }}</strong>
+        <span class="ds-price-highlight__note">کف قیمتِ {{ ticketed_places | length | fa_num }} جاذبهٔ قیمت‌دار · ترب فقط مقایسه می‌کند، فروش با تأمین‌کننده است</span>
+      </div>
+      {% endif %}
+
+      <ul class="grid gap-2">
+        {% for day in days_view %}
+        {% for place in day.places %}
+        {% if place.redirect_url %}
+        {% set supplier = place.redirect_url | supplier_of %}
+        <li class="flex items-center gap-3 rounded-lg border border-line bg-field px-3 py-2.5">
+          {% set poi_tile_px = 44 %}{% include "itinerary/partials/poi_tile.html" %}
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-[13px] font-bold text-ink">{{ place.name_fa }}</p>
+            <p class="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-muted">
+              {# the day pill — the plan's own vocabulary, so a row can be
+                 found back in the timeline below ── #}
+              <span class="inline-flex h-4 shrink-0 items-center rounded-full px-1.5 font-bold text-white"
+                    style="background:{{ day.color }}">روز {{ day_ordinals.get(day.no, day.no | fa_num) }}</span>
+              {% if supplier %}خرید از {{ supplier.name }}{% else %}خرید از سایت فروشنده{% endif %}
+            </p>
+          </div>
+          <div class="flex shrink-0 items-center gap-2">
+            {% if place.lowest_price %}
+            <span class="whitespace-nowrap text-[14px] font-bold text-ink">{{ place.lowest_price | toman }}</span>
+            {% else %}
+            <span class="text-[10px] text-muted">قیمت ثبت نشده</span>
+            {% endif %}
+            {% if supplier and supplier.logo %}
+            <a href="{{ place.redirect_url }}" target="_blank" rel="noopener noreferrer"
+               class="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line bg-white transition hover:border-focus hover:shadow-card active:scale-95 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/40"
+               aria-label="خرید بلیت {{ place.name_fa }} از سایت {{ supplier.name }}"
+               title="مقایسهٔ قیمت و خرید مستقیم از {{ supplier.name }}">
+              <img src="{{ asset_url(supplier.logo) }}" alt=""
+                   class="h-6 w-6" style="object-fit:contain" loading="lazy">
+            </a>
+            {% else %}
+            <a href="{{ place.redirect_url }}" target="_blank" rel="noopener noreferrer"
+               class="ds-button--red flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition active:scale-95 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/40"
+               aria-label="خرید بلیت {{ place.name_fa }} از سایت تأمین‌کننده"
+               title="مقایسهٔ قیمت و خرید مستقیم از سایت فروشنده">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </a>
+            {% endif %}
+          </div>
+        </li>
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+      </ul>
+
+      <p class="text-[11px] leading-[1.8] text-muted">
+        قیمت‌ها کف قیمتِ ثبت‌شده در زمان ساخت برنامه‌اند و ممکن است در سایت تأمین‌کننده تفاوت داشته باشند؛
+        خرید و پرداخت مستقیماً در سایت فروشنده انجام می‌شود.
+      </p>
+    </div>
+  </div>
+</div>

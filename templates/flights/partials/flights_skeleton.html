@@ -1,0 +1,38 @@
+{# ── Step-1 response (and the cache-miss poll body): paints instantly, then
+      fetches the real results itself. While the Redis hash is cold the results
+      endpoint re-emits THIS partial — each outerHTML swap creates a fresh node
+      whose `load` fires again after 2 s (server-driven polling: the response
+      decides whether to keep polling). Loading banner = ds-status (green pill,
+      pulsing dot); pulse bars sit in white sky-100-bordered cards, same shell
+      as the real results. #}
+<div id="flight-results" role="status" aria-label="در حال جستجوی پرواز‌ها" class="fade-in rounded-lg border border-line bg-fog shadow-card"
+     hx-get="/search/flights/results?{{ qs }}"
+     hx-trigger="load delay:2s"
+     hx-target="this"
+     hx-swap="outerHTML">
+
+  <div class="border-b border-soft px-5 py-4">
+    {% set message = "در حال جمع‌آوری قیمت‌های زنده از آژانس‌ها…" %}
+    {% include "flights/partials/loading_pill.html" %}
+  </div>
+
+  <div class="p-4">
+    {% for _ in range(4) %}
+    <div class="ds-skeleton animate-pulse" aria-hidden="true">
+      <div class="ds-skeleton__logo"></div>
+      <div class="ds-skeleton__text">
+        <div class="h-3 w-28 rounded bg-line"></div>
+        <div class="h-2.5 w-20 rounded bg-soft"></div>
+      </div>
+      <div class="ds-skeleton__rule">
+        <div class="h-5 w-12 rounded bg-line"></div>
+        <div class="h-px flex-1 bg-line"></div>
+        <div class="h-5 w-12 rounded bg-line"></div>
+      </div>
+      <div class="ds-skeleton__price"></div>
+    </div>
+    {% endfor %}
+
+    <p class="sr-only">لطفاً صبر کنید؛ نتایج جستجو به‌زودی نمایش داده می‌شود.</p>
+  </div>
+</div>

@@ -1,0 +1,10 @@
+{# Swapped into #results (or the mobile sheet host) when a search/lookup is invalid.
+   Same ds error idiom as the home page banner (flights/index.html): redsoft fill +
+   redink text — tokens flip with the theme, no dark: variants needed. #}
+<div id="flight-results" role="alert" class="ds-alert items-start py-4">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 h-5 w-5 shrink-0 text-redink" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+  <div>
+    <p class="text-sm font-bold text-redink">{{ message }}</p>
+    <p class="mt-0.5 text-xs font-medium text-redink opacity-75">لطفاً جستجو را اصلاح کنید و دوباره تلاش کنید.</p>
+  </div>
+</div>

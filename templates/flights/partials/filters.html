@@ -1,0 +1,192 @@
+{# ── The PGP filter rail — torob.com's captured /search + /browse rail (live
+      DOM + references/routes/01-search.html): «فیلترها» header → quick-filter
+      pills → FilterTitleRow accordions (قیمت / انتخاب ایرلاین / ساعت پرواز /
+      جستجو در نتایج) → مسیرهای پرتکرار links. The price group is the captured
+      priceFilter form (از/تا labels + «تومان» unit INSIDE the box, 12px stack
+      gap, the observed-range suggestion chip, اعمال فیلتر + حذف with the
+      captured inline overrides: 8px radius, sky-50/sky-800 text). The search
+      boxes are the captured SearchBox (40px, fog bg, 1px sky-500 ring). On
+      <lg it becomes the captured mobile-filter-drawer (side panel + scrim).
+      The form contract is unchanged: hx-get re-requests the browse shell on
+      every change. ── #}
+<aside id="filter-drawer" aria-label="فیلترهای پروازها"
+       class="ds-browse-filters fixed z-[60] w-[min(330px,calc(100vw-44px))] translate-x-full
+              overflow-y-auto border-l border-line bg-fog p-4
+              lg:static lg:z-auto lg:w-auto lg:translate-x-0 lg:overflow-visible lg:border-0 lg:bg-transparent lg:p-0">
+
+  {# «فیلترها» header — on every breakpoint (guide capture); the X closes the
+     mobile drawer only #}
+  <div class="mb-2 flex min-h-9 items-center justify-between">
+    <strong class="text-sm font-bold text-ink">فیلترها</strong>
+    <button id="filter-close" type="button" aria-label="بستن فیلترها"
+            class="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition hover:bg-soft hover:text-ink lg:hidden">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-[18px] w-[18px]" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+    </button>
+  </div>
+
+  {# quick-filter pills (captured pills row) — the flight types as toggles;
+     active = blue fill + check, like the captured checked pills #}
+  <div class="mb-2.5 flex flex-wrap gap-1.5">
+    {% for t, label in (("charter", "فقط چارتری"), ("system", "فقط سیستمی")) %}
+    <a href="{{ type_urls[t] }}" hx-get="{{ type_urls[t] }}" hx-target="#flight-results" hx-swap="outerHTML"
+       role="button" aria-pressed="{{ 'true' if t in filters.types else 'false' }}"
+       class="inline-flex min-h-8 items-center gap-1 rounded-full border px-2.5 text-[11px] transition
+              {{ 'ds-chip ds-chip--active font-bold' if t in filters.types else 'border-line bg-field text-muted hover:text-ink' }}">
+      {% if t in filters.types %}
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+      {% endif %}
+      {{ label }}
+    </a>
+    {% endfor %}
+  </div>
+
+  <form id="flight-filters" class="grid" novalidate
+        hx-get="/search/flights/results"
+        hx-target="#flight-results"
+        hx-swap="outerHTML"
+        hx-trigger="change delay:250ms, submit">
+
+    <input type="hidden" name="origin" value="{{ origin }}">
+    <input type="hidden" name="destination" value="{{ destination }}">
+    <input type="hidden" name="date" value="{{ datenum }}">
+    <input type="hidden" name="passengers" value="{{ passengers }}">
+    <input type="hidden" name="sort" value="{{ sort }}">
+
+    {# ── FilterTitleRow: قیمت — the captured priceFilter form ── #}
+    <section class="ds-filter-group border-t first:border-t-0" data-filter-group="price">
+      <button type="button" data-filter-toggle aria-expanded="true" aria-controls="fg-price"
+              class="ds-filter-group__trigger">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 shrink-0 transition-transform duration-150" aria-hidden="true"><path d="M18.7 9.7l-6 6c-.2.2-.4.3-.7.3-.3 0-.5-.1-.7-.3l-6-6c-.4-.4-.4-1 0-1.4.4-.4 1-.4 1.4 0l5.3 5.3 5.3-5.3c.4-.4 1-.4 1.4 0 .4.4.4 1 0 1.4z"/></svg>
+        <span>قیمت</span>
+      </button>
+      <div id="fg-price" data-filter-content class="ds-filter-group__content grid gap-3 pt-2">
+        <label class="ds-price-field">
+          <span class="ds-price-field__label">از</span>
+          <input type="number" inputmode="numeric" min="0" step="10000" name="min_price"
+                 value="{{ filters.min_price or '' }}" placeholder="۰" class="ds-price-field__input">
+          <span class="ds-price-field__unit">تومان</span>
+        </label>
+        <label class="ds-price-field">
+          <span class="ds-price-field__label">تا</span>
+          <input type="number" inputmode="numeric" min="0" step="10000" name="max_price"
+                 value="{{ filters.max_price or '' }}" placeholder="∞" class="ds-price-field__input">
+          <span class="ds-price-field__unit">تومان</span>
+        </label>
+        {# PriceSuggestions — the observed range chip; click fills از/تا (captured behaviour) #}
+        {% if price_min and price_max and price_min != price_max %}
+        <button type="button" data-price-suggest data-min="{{ price_min }}" data-max="{{ price_max }}"
+                title="گذاشتن بازهٔ قیمت نتایج در خانه‌های از/تا"
+                class="justify-self-start rounded-full bg-field px-2.5 py-1 text-[10px] text-focus transition hover:bg-soft">
+          از {{ price_min | toman }} تا {{ price_max | toman }}
+        </button>
+        {% endif %}
+        {# priceFilter_buttonApply — the captured inline overrides:
+           اعمال = Button_black (--button-text-color: sky-50, radius 8px),
+           حذف = Button_ghost (--button-text-color: sky-800 → ink text+border) #}
+        <div class="ds-filter-actions">
+          <button type="submit"
+                  class="ds-button--dark inline-flex h-9 items-center justify-center rounded-lg px-2 text-[11px] font-medium transition active:scale-[.98]">
+            اعمال فیلتر
+          </button>
+          <button type="button" data-price-clear
+                  class="ds-button--ghost inline-flex h-9 items-center justify-center rounded-lg px-2 text-[11px] font-medium transition active:scale-[.98]">
+            حذف
+          </button>
+        </div>
+      </div>
+    </section>
+
+    {# ── FilterTitleRow: انتخاب ایرلاین — the captured برند SearchBox mapped to airlines ── #}
+    <section class="ds-filter-group border-t" data-filter-group="airline">
+      <button type="button" data-filter-toggle aria-expanded="true" aria-controls="fg-airline"
+              class="ds-filter-group__trigger">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 shrink-0 transition-transform duration-150" aria-hidden="true"><path d="M18.7 9.7l-6 6c-.2.2-.4.3-.7.3-.3 0-.5-.1-.7-.3l-6-6c-.4-.4-.4-1 0-1.4.4-.4 1-.4 1.4 0l5.3 5.3 5.3-5.3c.4-.4 1-.4 1.4 0 .4.4.4 1 0 1.4z"/></svg>
+        <span>انتخاب ایرلاین</span>
+      </button>
+      <div id="fg-airline" data-filter-content class="ds-filter-group__content grid gap-1 pt-1">
+        {# captured SearchBox: 40px, fog bg, 1px sky-500 ring (box-shadow), radius 8px #}
+        <div class="relative mb-2 mt-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="search" data-airline-search placeholder="جستجوی ایرلاین" autocomplete="off" aria-label="جستجوی ایرلاین"
+                 class="ds-filter-search placeholder:text-muted">
+        </div>
+        {% for code, count in airline_counts.items() %}
+        <label data-airline-row data-name="{{ airlines[code].name }}"
+               class="flex min-h-8 cursor-pointer items-center gap-3 text-xs text-muted transition has-[:checked]:font-bold has-[:checked]:text-ink">
+          <span class="flex items-center gap-1.5">
+            <input type="checkbox" name="airline" value="{{ code }}"
+                   {% if code in filters.airlines %}checked{% endif %}
+                   class="h-[18px] w-[18px] accent-focus">
+            {{ airlines[code].name }} <small class="text-[10px] text-muted" dir="ltr">{{ code }}</small>
+          </span>
+        </label>
+        {% endfor %}
+        <p data-airline-empty hidden class="py-1 text-[11px] text-muted">ایرلینی با این نام پیدا نشد.</p>
+      </div>
+    </section>
+
+    {# ── FilterTitleRow: ساعت پرواز ── #}
+    <section class="ds-filter-group border-t" data-filter-group="time">
+      <button type="button" data-filter-toggle aria-expanded="true" aria-controls="fg-time"
+              class="ds-filter-group__trigger">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 shrink-0 transition-transform duration-150" aria-hidden="true"><path d="M18.7 9.7l-6 6c-.2.2-.4.3-.7.3-.3 0-.5-.1-.7-.3l-6-6c-.4-.4-.4-1 0-1.4.4-.4 1-.4 1.4 0l5.3 5.3 5.3-5.3c.4-.4 1-.4 1.4 0 .4.4.4 1 0 1.4z"/></svg>
+        <span>ساعت پرواز</span>
+      </button>
+      <div id="fg-time" data-filter-content class="ds-filter-group__content grid gap-1 pt-2">
+        {% for key, item in time_buckets.items() %}
+        {% if time_counts.get(key) %}
+        <label class="flex min-h-8 cursor-pointer items-center gap-3 text-xs text-muted transition has-[:checked]:font-bold has-[:checked]:text-ink">
+          <span class="flex items-center gap-1.5">
+            <input type="checkbox" name="time" value="{{ key }}"
+                   {% if key in filters.times %}checked{% endif %}
+                   class="h-[18px] w-[18px] accent-focus">
+            {{ item[2] }} <span class="text-[10px]">({{ item[3] }})</span>
+          </span>
+        </label>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </section>
+  </form>
+
+  {# ── FilterTitleRow: جستجو در نتایج — the captured bottom row: a lone
+        SearchBox (client-side card filter). Lives OUTSIDE the price form like
+        torob.com's own method=get /search/ form. ── #}
+  <section class="ds-filter-group border-t" data-filter-group="results">
+    <button type="button" data-filter-toggle aria-expanded="true" aria-controls="fg-results"
+            class="ds-filter-group__trigger">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4 shrink-0 transition-transform duration-150" aria-hidden="true"><path d="M18.7 9.7l-6 6c-.2.2-.4.3-.7.3-.3 0-.5-.1-.7-.3l-6-6c-.4-.4-.4-1 0-1.4.4-.4 1-.4 1.4 0l5.3 5.3 5.3-5.3c.4-.4 1-.4 1.4 0 .4.4.4 1 0 1.4z"/></svg>
+      <span>جستجو در نتایج</span>
+    </button>
+    <div id="fg-results" data-filter-content class="ds-filter-group__content pt-1">
+      <div class="relative mt-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" data-results-search autocomplete="off" aria-label="جستجو در نتایج"
+               class="ds-filter-search">
+      </div>
+      <p data-results-empty-note class="hidden pt-1 text-[10px] text-muted">پروازی با این عبارت پیدا نشد.</p>
+    </div>
+  </section>
+
+  {# مسیرهای پرتکرار — the captured rail-bottom links (دسته‌بندی‌های پربازدید
+     rhythm), mapped to the demo routes for this date #}
+  <nav class="mt-2 border-t border-soft pt-2.5" aria-label="مسیرهای پرتکرار">
+    <p class="mb-1 text-[13px] font-bold text-ink">مسیرهای پرتکرار</p>
+    <ul class="grid">
+      {% for o, d, label in popular %}
+      <li>
+        <a href="/search/flights?origin={{ o }}&amp;destination={{ d }}&amp;date={{ datenum }}&amp;passengers={{ passengers }}"
+           class="flex min-h-8 items-center text-xs text-muted transition hover:text-ink">{{ label }}</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </nav>
+</aside>
+
+{# scrim for the mobile filter drawer (captured pattern) #}
+<button id="filter-scrim" type="button" aria-label="بستن فیلترها" hidden
+        class="ds-browse-scrim lg:hidden"></button>
+
+{# rail behaviour — static/js/filter_rail.js; a plain src script so htmx
+     re-executes it on every shell swap exactly as the inline original did #}
+<script src="{{ asset_url('/static/js/filter_rail.js') }}"></script>

@@ -1,0 +1,40 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pipeline dependencies (also validates wheels install cleanly)
+        run: pip install -r requirements/pipelines.txt
+
+      - name: Install web + test dependencies
+        run: pip install -r requirements/dev.txt
+
+      - name: Compile all modules
+        run: python -m py_compile main.py src/*.py src/routers/*.py src/itinerary/*.py pipelines/*.py pipelines/common/*.py pipelines/suppliers/*.py scripts/pipeline_status.py
+
+      - name: Test suite (pytest — pipeline stubs + BFF frontend suite, no services needed)
+        run: python -m pytest tests -q
+
+      - name: Shell syntax check
+        run: bash -n scripts/verify_pipeline.sh
+
+      - name: Compose config validation (base + pipeline overlay)
+        env:
+          # Syntax check only — the stack never starts in CI.
+          POSTGRES_PASSWORD: ci-placeholder
+          PGADMIN_DEFAULT_PASSWORD: ci-placeholder
+        run: docker compose -f docker-compose.yml -f docker-compose.pipeline.yml config --quiet

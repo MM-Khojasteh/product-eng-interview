@@ -1,0 +1,11 @@
+{# ── ds-loading-pill — the green «در حال …» status pill: pulsing dot +
+      message + the bounded (تلاش N از M) counter. Shared by the results
+      skeleton and the Compare modal's refresh state. Expects `message`
+      (+ attempt, max_attempts) in the calling context:
+        {% set message = "در حال جمع‌آوری قیمت‌های زنده از آژانس‌ها…" %}
+        {% include "flights/partials/loading_pill.html" %} ── #}
+<p class="ds-loading-pill">
+  <span class="ds-loading-pill__dot" aria-hidden="true"></span>
+  {{ message }}
+  <span class="tabular-nums">(تلاش {{ attempt | fa_num }} از {{ max_attempts | fa_num }})</span>
+</p>

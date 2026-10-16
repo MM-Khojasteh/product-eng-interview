@@ -1,0 +1,175 @@
+# =====================================================================
+# Flight aggregator — ingestion pipeline services (compose overlay, opt-in)
+#
+#   docker compose -f docker-compose.yml -f docker-compose.pipeline.yml up -d --build
+#
+# Explicit -f overlay (not docker-compose.override.yml) so plain
+# `docker compose up -d` still starts only the data plane.
+#
+# Chain: worker → raw_flight_prices → normalizer → flight-prices.canonical
+#        → sink (Postgres) + liveness (Redis, TTL) ; deltas = tombstones ;
+#        scraper.dlq = malformed payloads.
+#
+# Env: `cp .env.example .env` and fill in the supplier endpoint matrix
+# (compose reads `.env`).
+# Inside the compose network use the INTERNAL listeners: kafka:29092,
+# postgres:5432, redis:6379 — NOT the localhost URLs of a host-run .env. Defaults
+# below already do; override with PIPELINE_KAFKA_BOOTSTRAP_SERVERS,
+# PIPELINE_DATABASE_URL, PIPELINE_REDIS_URL.
+# =====================================================================
+services:
+  # ------------------------------------------------------------------
+  # Worker — supplier strategies → raw topic (token bucket + circuit
+  # breaker + jittered loop; SUPPLIERS/ROUTES drive fan-out)
+  # ------------------------------------------------------------------
+  pipeline-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: flight-pipeline:local
+    container_name: pipeline-worker
+    restart: unless-stopped
+    command: ["python", "-m", "pipelines.raw_worker"]
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: ${PIPELINE_KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
+      KAFKA_SECURITY_PROTOCOL: ${KAFKA_SECURITY_PROTOCOL:-PLAINTEXT}
+      KAFKA_SASL_MECHANISM: ${KAFKA_SASL_MECHANISM:-SCRAM-SHA-256}
+      KAFKA_USERNAME: ${KAFKA_USERNAME:-}
+      KAFKA_PASSWORD: ${KAFKA_PASSWORD:-}
+      RAW_TOPIC: ${RAW_TOPIC:-raw_flight_prices}
+      CANONICAL_TOPIC: ${CANONICAL_TOPIC:-flight-prices.canonical}
+      DELTAS_TOPIC: ${DELTAS_TOPIC:-flight-prices.deltas}
+      SEARCH_REQUESTS_TOPIC: ${SEARCH_REQUESTS_TOPIC:-search.requests}
+      KAFKA_DLQ_TOPIC: ${KAFKA_DLQ_TOPIC:-scraper.dlq}
+      # --- on-demand cache-miss scans (BFF search.requests → this worker) ---
+      ON_DEMAND_SCANS: ${ON_DEMAND_SCANS:-true}
+      # --- suppliers & routes (cadence pass) ---
+      SUPPLIERS: ${SUPPLIERS:-flytoday}
+      ROUTES: ${ROUTES:-THR-MHD}
+      DEPARTURE_DATE: ${DEPARTURE_DATE:-2026-11-15}
+      ADULTS: ${ADULTS:-1}
+      CHILDREN: ${CHILDREN:-0}
+      INFANTS: ${INFANTS:-0}
+      CABIN: ${CABIN:-Y}
+      FLYTODAY_BASE_URL: ${FLYTODAY_BASE_URL:-https://www.flytoday.ir}
+      ALIBABA_BASE_URL: ${ALIBABA_BASE_URL:-https://ws.alibaba.ir}
+      # Reverse-engineered endpoint config (required — deliberately NOT in code;
+      # see .env.example). Empty here ⇒ the worker fails at startup with the
+      # _supplier_kwargs ValueError naming the missing variable.
+      FLYTODAY_SEARCH_PATH: ${FLYTODAY_SEARCH_PATH:-}
+      FLYTODAY_TOKEN_PATH: ${FLYTODAY_TOKEN_PATH:-}
+      ALIBABA_SEARCH_PATH: ${ALIBABA_SEARCH_PATH:-}
+      ALIBABA_AB_CHANNEL: ${ALIBABA_AB_CHANNEL:-}
+      SUPPLIER_HTTP_TIMEOUT_SECONDS: ${SUPPLIER_HTTP_TIMEOUT_SECONDS:-20}
+      SCRAPER_MAX_RETRIES: ${SCRAPER_MAX_RETRIES:-3}
+      # --- politeness budget (dossier §6) ---
+      RATE_BUCKET_CAPACITY: ${RATE_BUCKET_CAPACITY:-6}
+      RATE_SEARCHES_PER_MINUTE: ${RATE_SEARCHES_PER_MINUTE:-6}
+      SEARCH_GAP_SECONDS: ${SEARCH_GAP_SECONDS:-2}
+      CIRCUIT_BLOCKED_THRESHOLD: ${CIRCUIT_BLOCKED_THRESHOLD:-3}
+      CIRCUIT_ERROR_THRESHOLD: ${CIRCUIT_ERROR_THRESHOLD:-5}
+      SCRAPE_INTERVAL_SECONDS: ${SCRAPE_INTERVAL_SECONDS:-900}
+      SCRAPE_JITTER_PERCENT: ${SCRAPE_JITTER_PERCENT:-0.30}
+      SCRAPE_RUN_ON_START: ${SCRAPE_RUN_ON_START:-true}
+      # spec §2: scans that cannot reach Kafka are spooled on disk and replayed
+      SPOOL_ENABLED: ${SPOOL_ENABLED:-true}
+      SPOOL_DIR: /app/.spool
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - spool_data:/app/.spool
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks: [backend]
+
+  # ------------------------------------------------------------------
+  # Normalizer — raw → canonical DTOs + tombstones (deltas) + DLQ
+  # ------------------------------------------------------------------
+  pipeline-normalizer:
+    image: flight-pipeline:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pipeline-normalizer
+    restart: unless-stopped
+    command: ["python", "-m", "pipelines.normalizer"]
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: ${PIPELINE_KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
+      KAFKA_SECURITY_PROTOCOL: ${KAFKA_SECURITY_PROTOCOL:-PLAINTEXT}
+      KAFKA_SASL_MECHANISM: ${KAFKA_SASL_MECHANISM:-SCRAM-SHA-256}
+      KAFKA_USERNAME: ${KAFKA_USERNAME:-}
+      KAFKA_PASSWORD: ${KAFKA_PASSWORD:-}
+      RAW_TOPIC: ${RAW_TOPIC:-raw_flight_prices}
+      CANONICAL_TOPIC: ${CANONICAL_TOPIC:-flight-prices.canonical}
+      DELTAS_TOPIC: ${DELTAS_TOPIC:-flight-prices.deltas}
+      KAFKA_DLQ_TOPIC: ${KAFKA_DLQ_TOPIC:-scraper.dlq}
+      NORMALIZER_GROUP_ID: ${NORMALIZER_GROUP_ID:-flight-normalizer}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks: [backend]
+
+  # ------------------------------------------------------------------
+  # Sink — canonical → PostgreSQL (at-least-once, idempotent upserts)
+  # ------------------------------------------------------------------
+  pipeline-sink:
+    image: flight-pipeline:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pipeline-sink
+    restart: unless-stopped
+    command: ["python", "-m", "pipelines.kafka_to_db"]
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: ${PIPELINE_KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
+      KAFKA_SECURITY_PROTOCOL: ${KAFKA_SECURITY_PROTOCOL:-PLAINTEXT}
+      KAFKA_SASL_MECHANISM: ${KAFKA_SASL_MECHANISM:-SCRAM-SHA-256}
+      KAFKA_USERNAME: ${KAFKA_USERNAME:-}
+      KAFKA_PASSWORD: ${KAFKA_PASSWORD:-}
+      CANONICAL_TOPIC: ${CANONICAL_TOPIC:-flight-prices.canonical}
+      KAFKA_DLQ_TOPIC: ${KAFKA_DLQ_TOPIC:-scraper.dlq}
+      SINK_GROUP_ID: ${SINK_GROUP_ID:-flight-db-sink}
+      # Derived from the base file's POSTGRES_* (one password, no literal here).
+      DATABASE_URL: ${PIPELINE_DATABASE_URL:-postgresql://${POSTGRES_USER:-flight}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-flights}?sslmode=disable}
+      DB_CONNECT_ATTEMPTS: ${DB_CONNECT_ATTEMPTS:-10}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks: [backend]
+
+  # ------------------------------------------------------------------
+  # Liveness — canonical + tombstones → Redis hot cache (TTL 60–120 s)
+  # ------------------------------------------------------------------
+  pipeline-liveness:
+    image: flight-pipeline:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pipeline-liveness
+    restart: unless-stopped
+    command: ["python", "-m", "pipelines.liveness"]
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: ${PIPELINE_KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
+      KAFKA_SECURITY_PROTOCOL: ${KAFKA_SECURITY_PROTOCOL:-PLAINTEXT}
+      KAFKA_SASL_MECHANISM: ${KAFKA_SASL_MECHANISM:-SCRAM-SHA-256}
+      KAFKA_USERNAME: ${KAFKA_USERNAME:-}
+      KAFKA_PASSWORD: ${KAFKA_PASSWORD:-}
+      CANONICAL_TOPIC: ${CANONICAL_TOPIC:-flight-prices.canonical}
+      DELTAS_TOPIC: ${DELTAS_TOPIC:-flight-prices.deltas}
+      LIVENESS_GROUP_ID: ${LIVENESS_GROUP_ID:-flight-liveness}
+      REDIS_URL: ${PIPELINE_REDIS_URL:-redis://redis:6379/0}
+      LIVENESS_TTL_SECONDS: ${LIVENESS_TTL_SECONDS:-120}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [backend]
+
+volumes:
+  spool_data:

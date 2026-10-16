@@ -1,0 +1,25 @@
+{# ─ ds-service-filter chips — the torob.com sellers-list «خدمات فروشنده» row.
+      Counts cover BUYABLE offers only (flights.chip_counts); a chip renders
+      only when its count ≥ 1 (live mode today: usually just «با ترب‌پی»).
+      Click toggles aria-pressed + row visibility (search.js §3, delegated on
+      document so HTMX modal swaps need no re-init; no-JS ⇒ all rows shown).
+      Renders nothing when every count is 0 (e.g. all-refundable-None rows). ── #}
+{% if chip_counts and (chip_counts.tpay or chip_counts.baggage or chip_counts.refundable) %}
+<div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="فیلتر پیشنهادهای آژانس‌ها">
+  {% if chip_counts.tpay %}
+  <button type="button" data-offer-chip="tpay" aria-pressed="false"
+          class="inline-flex min-h-[22px] items-center rounded-full border border-line bg-fog px-2 py-0.5 text-[10px] font-medium text-muted transition hover:bg-soft aria-pressed:border-focus aria-pressed:bg-soft aria-pressed:text-ink">
+    با ترب‌پی ({{ chip_counts.tpay | fa_num }})</button>
+  {% endif %}
+  {% if chip_counts.baggage %}
+  <button type="button" data-offer-chip="baggage" aria-pressed="false"
+          class="inline-flex min-h-[22px] items-center rounded-full border border-line bg-fog px-2 py-0.5 text-[10px] font-medium text-muted transition hover:bg-soft aria-pressed:border-focus aria-pressed:bg-soft aria-pressed:text-ink">
+    بار مجاز ({{ chip_counts.baggage | fa_num }})</button>
+  {% endif %}
+  {% if chip_counts.refundable %}
+  <button type="button" data-offer-chip="refundable" aria-pressed="false"
+          class="inline-flex min-h-[22px] items-center rounded-full border border-line bg-fog px-2 py-0.5 text-[10px] font-medium text-muted transition hover:bg-soft aria-pressed:border-focus aria-pressed:bg-soft aria-pressed:text-ink">
+    قابل استرداد ({{ chip_counts.refundable | fa_num }})</button>
+  {% endif %}
+</div>
+{% endif %}

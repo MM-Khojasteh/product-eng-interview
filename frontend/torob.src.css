@@ -1,0 +1,450 @@
+/* Torob Travel — Tailwind source. The blocks after the @tailwind directives
+   are the exact token sets previously inlined in templates/base.html (light
+   :root + dark html[data-theme="dark"] sets, captured IRANYekanX font, and
+   the two tiny component rules). Utilities are generated from the templates
+   via frontend/tailwind.config.js — build with: bash scripts/build_css.sh */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Torob's local font (captured IRANYekanX variable font, self-hosted) */
+@font-face {
+  font-family: "IRANYekanX";
+  src: url("../fonts/IRANYekanXVF.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+/* ── Light theme (:root) and dark theme — the exact variable sets observed
+      on torob.com, including the 4-color logo ramp that flips to monochrome
+      in dark mode. ── */
+:root {
+  --sky-800: #1e293b;  --sky-500: #64748b;  --sky-300: #cbd5e1;
+  --sky-100: #f1f5f9;  --sky-50: #f8fafc;
+  --bg-bright: #f1f5f9;  --bg-fog: #ffffff;
+  --red-800: #9f1239;  --red-50: #fff0f2;
+  --green-800: #003d01;  --green-50: #eefceb;
+  --blue-600: #3468cc;  --blue-800: #1e40af;  --blue-50: #eff6ff;  --blue-500: #3b82f6;
+  --brand: #d73948;
+  --logo-color-1: #e91e33;  --logo-color-2: #bf0f22;
+  --logo-color-3: #6fbc23;  --logo-color-4: #519a23;
+  --focus: var(--blue-600);
+  --shadow-sm: 0 1px 3px rgba(30, 41, 59, .08);
+  --shadow-md: 0 8px 24px rgba(30, 41, 59, .12);
+}
+html[data-theme="dark"] {
+  --sky-800: #f1f5f9;  --sky-500: #94a3b8;  --sky-300: #475569;
+  --sky-100: #1e293b;  --sky-50: #0f172b;
+  --bg-bright: #15202b;  --bg-fog: #212b36;
+  --red-800: #fda4af;  --red-50: #4c0519;
+  --green-800: #86efac;  --green-50: #052e16;
+  --blue-600: #7da2f5;  --blue-800: #b6ccfb;  --blue-50: #172554;
+  --brand: #d74937;
+  --logo-color-1: #f1f5f9;  --logo-color-2: #f1f5f9;
+  --logo-color-3: #f1f5f9;  --logo-color-4: #cbd5e1;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, .35);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, .5);
+}
+
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.fade-in { animation: fade-in .18s ease-out both; }
+
+/* ── Component layer — strict BEM under the ds- namespace, names aligned with
+      torob-design-capture/torob-design-system.css (the design contract).
+      Conventions (docs/ARCHITECTURE_REVIEW.md §4.2):
+        • component rules are PLAIN rules after the @tailwind directives —
+          they win same-specificity ties against utilities, so any utility
+          kept in markup next to a component class must be PROPERTY-DISJOINT
+          from it (per-instance variance rides utilities; invariants live in
+          the class);
+        • ds-button--* are standalone color SKINS (the capture's vocabulary):
+          geometry rides utilities beside them;
+        • state stays in .hidden / aria-pressed / data-* — never a BEM class.
+      ── */
+
+/* Torob Pay mark outline (torobpay.com nav logo): leaf outline stays dark
+   green on light fog, flips to leaf green in dark so the mark never sinks
+   into the dark surface. */
+:root { --tpay-mark: #003d01; }
+html[data-theme="dark"] { --tpay-mark: #9ce76a; }
+
+/* ── ds-price-field — torob.com /search price filter (priceFilter_inputWithStart
+      + priceFilter_inputUnit, references/routes/01-search.html): the «از»/«تا»
+      labels and the «تومان» unit live INSIDE the box. Dark mode inverts the
+      field to a near-white box — exactly the captured dark /search rail. ── */
+.ds-price-field {
+  display: flex; align-items: center; gap: 6px;
+  height: 38px; padding-inline: 10px;
+  background: var(--bg-fog); border: 1px solid var(--sky-300); border-radius: 8px;
+}
+.ds-price-field:focus-within { border-color: var(--blue-600); }
+.ds-price-field__label, .ds-price-field__unit { flex-shrink: 0; font-size: 11px; color: var(--sky-500); }
+.ds-price-field__input {
+  flex: 1; min-width: 0; height: 100%;
+  background: transparent; border: 0; outline: 0;
+  font-family: inherit; font-size: 12px; color: var(--sky-800);
+  font-variant-numeric: tabular-nums;
+}
+.ds-price-field__input::placeholder { color: var(--sky-500); }
+html[data-theme="dark"] .ds-price-field { background: #f1f5f9; border-color: #f1f5f9; }
+html[data-theme="dark"] .ds-price-field__label,
+html[data-theme="dark"] .ds-price-field__unit { color: #64748b; }
+html[data-theme="dark"] .ds-price-field__input { color: #1e293b; }
+html[data-theme="dark"] .ds-price-field__input::placeholder { color: #94a3b8; }
+
+/* ── ds-button--tpay — Torob Pay CTA skin (the captured «دریافت اعتبار»
+      ctaButton next to the clover mark): leaf-green fill that stays legible in
+      both themes — dark leaf + pale mint text on light, light leaf + deep
+      green text on dark. Geometry rides utilities (the .tpay-cta precedent). ── */
+.ds-button--tpay { background: var(--green-800); color: var(--green-50); }
+.ds-button--tpay:hover { filter: brightness(1.06); }
+
+/* ── ds-button--red — production torob.com red CTA skin (Button_button__0jeRB,
+      the «خرید اینترنتی» idiom): red vertical gradient — same 180deg
+      construction as the captured --btn-other-1st-color — hovering to the
+      captured #bd2d3c (brand.hover). Geometry (rounded-lg / h-8 / font-bold)
+      rides utilities, like ds-button--tpay. The gradient is theme-fixed red
+      (like the map pins) — var(--brand) underneath is only the no-gradient
+      fallback. ── */
+.ds-button--red {
+  background-color: var(--brand);
+  background-image: linear-gradient(180deg, #f04151, #d73948);
+  color: #fff;
+}
+.ds-button--red:hover { background-image: none; background-color: #bd2d3c; }
+
+/* ── ds-chip / ds-chip--active — the captured ds-active-filter chip
+      (torob-design-system.css): blue-50 fill + blue-800 text + color-mix blue
+      border, hover deepens the border — the theme-aware replacement for the
+      old static border-blue-500/20 bg-blue-50 pair that never flipped in dark
+      mode (see the NB below for why this is a named rule, not utilities).
+      The block owns the pill invariants; height/radius/padding/font-size ride
+      per-site utilities (property-disjoint, see the layer header). ── */
+.ds-chip { display: inline-flex; align-items: center; }
+.ds-chip--active {
+  color: var(--blue-800);
+  background: var(--blue-50);
+  border-color: color-mix(in srgb, var(--blue-500) 20%, transparent);
+}
+.ds-chip--active:hover { border-color: color-mix(in srgb, var(--blue-500) 40%, transparent); }
+
+/* ── ds-price-highlight — کف قیمت (the capture's ds-price-highlight idiom).
+      ONE implementation for the three markup copies (list card, PDP, Compare
+      modal) + the map popup twin (formerly the inline popup-price rule). Invariants in
+      the class; per-site variance rides property-disjoint utilities
+      (font-size on __amount, whitespace/tabular on __note) or the modifiers:
+        --list    list card (md: end-aligned price track)
+        --pdp     flight page (rounded-lg, larger padding, sm: end-aligned)
+        --popup   map popup pill (flex row at popup size, fixed colours) ── */
+.ds-price-highlight {
+  @apply grid content-center justify-items-start gap-x-1.5 rounded
+         border border-red-500/25 bg-redsoft px-3.5 py-2.5;
+}
+.ds-price-highlight--list { @apply md:justify-items-end; }
+.ds-price-highlight--pdp { @apply rounded-lg px-4 py-3.5 sm:justify-items-end; }
+.ds-price-highlight--popup {
+  display: inline-flex; align-items: baseline; gap: 4px; margin-top: 6px;
+  padding: 3px 10px; border-radius: .5rem;
+  background: var(--red-50); color: var(--red-800);
+  border: 1px solid color-mix(in srgb, #d70040 18%, transparent);
+  font-size: 10px; font-weight: 700;
+}
+.ds-price-highlight__label { @apply text-[11px] text-redink; }
+.ds-price-highlight__amount { @apply whitespace-nowrap font-bold leading-[1.25] tabular-nums text-redink; }
+.ds-price-highlight__note { @apply col-span-full mt-0.5 text-[11px] text-redink; }
+.ds-price-highlight__scarcity { @apply col-span-full whitespace-nowrap text-[11px] font-bold text-brand; }
+
+/* NB: the custom color tokens above are CSS variables, so Tailwind's alpha
+   modifier syntax (e.g. bg-redsoft/60) CANNOT compile for them — v3 silently
+   drops the variant. Use solid tokens; if a tint is truly needed, add a named
+   rule here with color-mix(). */
+
+/* ── ds-field__label / ds-input — the home search fields (flights/index.html): the
+      40px fog input cluster shared by origin/destination/date inputs and the
+      passengers trigger (a BUTTON that adds its own flex-row utilities next
+      to the class — property-disjoint). --icon is the right-icon padding
+      (every field here carries a leading glyph at right-3).
+      NB: focus:ring-focus/15 CANNOT move in here — an alpha modifier on a
+      var()-backed token silently generates no utility (see the NB above),
+      and @apply of a non-existent class fails the build. The token stays
+      verbatim in the markup, inert there exactly as it is today. ── */
+.ds-field__label { @apply mb-1.5 block text-xs font-bold text-ink; }
+.ds-input {
+  @apply h-10 w-full rounded-lg border border-line bg-fog py-1.5 pl-3
+         text-sm font-medium text-ink placeholder:font-normal
+         placeholder:text-muted transition
+         focus:border-focus focus:outline-none focus:ring-[3px];
+}
+.ds-input--icon { @apply pr-9; }
+
+/* ── ds-modal-backdrop / ds-modal — the shared shell of the theme modal
+      (base.html) and the Compare modal (offers_modal.html): the captured
+      58%-black centered backdrop + fog panel with the pop shadow. `grid`
+      (and the theme modal's `hidden`) stay as markup utilities ON PURPOSE:
+      .hidden is the JS state hook and only keeps beating a display
+      declaration between utilities — never against this plain rule. fade-in
+      stays separate (animation utility, not a component). Per-modal
+      geometry (width, max-h, overflow, padding) rides utilities. ── */
+.ds-modal-backdrop { @apply fixed inset-0 z-[100] place-items-center bg-black/[.58] p-4; }
+.ds-modal { @apply rounded-lg bg-fog shadow-pop; }
+.ds-modal__header { @apply flex items-center justify-between gap-3 border-b border-soft; }
+.ds-modal__title { @apply font-bold text-ink; }
+.ds-modal__close { @apply flex h-8 w-8 items-center justify-center rounded-lg transition hover:bg-soft; }
+.ds-modal__body { @apply grid; }
+
+/* ── ds-browse-filters + the rail's groups — filters.html (capture names).
+      The aside is a mobile drawer that UN-does almost every base declaration
+      at lg:, so only the genuinely invariant bits (edge anchoring + the
+      drawer slide transition) live in the class; every lg-overridden
+      declaration stays a utility beside it (cascade rule 2). Sections keep
+      border-t / first:border-t-0 as utilities for the same reason; the
+      search box is the captured SearchBox ring anatomy. ── */
+.ds-browse-filters { @apply inset-y-0 right-0 transition-transform duration-200; }
+.ds-filter-group { @apply border-soft py-2.5; }
+.ds-filter-group__trigger {
+  @apply flex min-h-9 w-full items-center gap-1.5 rounded px-0.5
+         text-[13px] font-bold text-ink transition hover:opacity-80;
+}
+.ds-filter-group__content { @apply pb-2.5; }
+.ds-filter-search {
+  @apply h-10 w-full rounded-lg bg-fog py-1.5 pl-3 pr-10 text-xs text-ink
+         ring-1 ring-muted focus:outline-none focus:ring-2 focus:ring-focus;
+}
+.ds-filter-actions { @apply mt-1 grid grid-cols-2 gap-1.5; }
+
+/* ── ds-button--dark / --ghost — the captured priceFilter apply/clear pair
+      (Button_black / Button_ghost): standalone skins in the ds-button--*
+      vocabulary; the shared 36px geometry rides utilities at the pair. ── */
+.ds-button--dark { @apply bg-ink text-field hover:opacity-90; }
+.ds-button--ghost { @apply border border-ink bg-field text-ink hover:opacity-80; }
+
+/* ── ds-browse-scrim — the mobile filter drawer's dimmer (lg:hidden stays a
+      markup utility: display must never live in this plain rule). ── */
+.ds-browse-scrim { @apply fixed inset-0 z-[55] cursor-pointer bg-slate-900/40; }
+
+/* ── ds-breadcrumbs — the «خانه / …» trail (flight PDP, results shell,
+      itinerary planner): 11px muted row, focus-blue links. ── */
+.ds-breadcrumbs { @apply flex flex-wrap items-center gap-1.5 text-[11px] text-muted; }
+.ds-breadcrumbs__link { @apply text-focus transition hover:underline; }
+
+/* ── ds-flight-card — one results row: fog card, soft border, brand border +
+      card shadow on hover (the `group` marker stays in markup — interaction
+      vocabulary, not styling). __body keeps its responsive gap/padding/
+      track utilities beside the class (cascade rule 2: the sm:/md: variants
+      must be able to win them). ── */
+.ds-flight-card {
+  @apply relative mb-2 overflow-hidden rounded-lg border border-soft bg-fog
+         transition duration-150 hover:border-brand hover:shadow-card;
+}
+.ds-flight-card__body { @apply grid; }
+.ds-flight-card__airline { @apply flex items-center gap-3; }
+
+/* ── ds-badge — the pill anatomy shared by the charter/system flight-type
+      pair (flights/partials/type_badge.html), the seller score/baggage/refund chips
+      and the «ارزان‌ترین» mark: 22px-min round pill, 10px medium text.
+      Modifiers are the color pairs (identical pairs share one rule). ── */
+.ds-badge { @apply inline-flex min-h-[22px] items-center rounded-full px-2 py-0.5 text-[10px] font-medium; }
+.ds-badge--charter, .ds-badge--best { @apply bg-redsoft text-redink; }
+.ds-badge--system, .ds-badge--muted { @apply bg-soft text-muted; }
+.ds-badge--score { @apply border border-green-500/20 bg-greensoft font-bold text-greenink; }
+.ds-badge--green { @apply border border-green-500/20 bg-greensoft text-greenink; }
+
+/* ── ds-flight-segment — the departure → arrival block with the rotated
+      plane (flights/partials/route_segment.html, shared by the results card and the
+      PDP summary). Per-site sizes ride utilities beside the elements:
+      __time text-xl/leading-6 (card) vs text-[26px]/leading-8 (PDP), plane
+      h-3.5 vs h-4, mid column min-w, __code margins/font-weight. ── */
+.ds-flight-segment { @apply flex items-center gap-4; }
+.ds-flight-segment__time { @apply font-bold tabular-nums text-ink; }
+.ds-flight-segment__code { @apply text-[11px] text-muted; }
+.ds-flight-segment__duration { @apply mb-1.5 text-center text-[11px] text-muted; }
+.ds-flight-segment__rule { @apply flex items-center; }
+
+/* ── ds-seller-card — one agency offer row (Compare modal + PDP share
+      flights/partials/seller_row.html): sky-300 border base; --best (cheapest live
+      offer) swaps to brand + card shadow; --sold-out fades the row. The
+      «خرید اینترنسی» handoff keeps its utilities in the markup on purpose:
+      it is the ds-button--red idiom but with the flat bg-brand fill (NOT
+      the gradient), and its focus-visible/active variants must keep
+      winning — cascade rule 2. ── */
+.ds-seller-card { @apply grid gap-2 rounded-lg border border-line bg-fog p-3 transition; }
+.ds-seller-card--sold-out { @apply opacity-60; }
+.ds-seller-card--best { @apply border-brand shadow-card; }
+.ds-seller-card__soldout {
+  @apply inline-flex h-8 min-w-[4.5rem] shrink-0 items-center justify-center
+         rounded-lg border border-line bg-soft px-2.5 text-[11px] font-medium text-muted;
+}
+.ds-seller-card__price { @apply grid shrink-0 gap-1.5; }
+
+/* ── ds-button--brand — the flat brand-red CTA skin (bg-brand → #bd2d3c on
+      hover): the unavailable-card CTAs, the PDP not-found CTA and the
+      itinerary empty-state CTA. Distinct from ds-button--red on purpose —
+      that one is the production gradient idiom; geometry rides utilities. ── */
+.ds-button--brand { @apply bg-brand text-white hover:bg-brand-hover; }
+
+/* ── ds-skeleton — the skeleton loading rows (flights_skeleton.html);
+      animate-pulse stays a utility beside the row (animation is not a
+      component, the fade-in rule). __rule keeps hidden/sm:flex INSIDE the
+      class — nothing else sets display on that element. ── */
+.ds-skeleton { @apply mb-2 flex items-center gap-4 rounded-lg border border-soft bg-fog p-4; }
+.ds-skeleton__logo { @apply h-10 w-10 shrink-0 rounded-md bg-line; }
+.ds-skeleton__text { @apply flex-1 space-y-2; }
+.ds-skeleton__rule { @apply hidden flex-1 items-center gap-3 sm:flex; }
+.ds-skeleton__price { @apply h-14 w-36 rounded border border-red-500/25 bg-redsoft; }
+
+/* ── ds-loading-pill / ds-sold-out — the two status pills
+      (flights/partials/loading_pill.html + flights/partials/sold_out_pill.html): the green
+      «در حال …» pill with its pulsing dot and the red «ظرفیت تکمیل شد»
+      pill with the brand dot. ── */
+.ds-loading-pill {
+  @apply inline-flex min-h-8 items-center gap-1.5 rounded-lg
+         border border-green-500/20 bg-greensoft px-2.5 text-xs text-greenink;
+}
+.ds-loading-pill__dot { @apply h-[7px] w-[7px] animate-pulse rounded-full bg-emerald-500; }
+.ds-sold-out {
+  @apply inline-flex min-h-8 items-center gap-1.5 rounded-lg
+         border border-red-500/20 bg-redsoft px-2.5 text-xs font-bold text-redink;
+}
+.ds-sold-out__dot { @apply h-[7px] w-[7px] rounded-full bg-brand; }
+
+/* ── ds-alert — the red error banner (home search form + search_error
+      partial): alignment/padding/copy deltas ride utilities at each site. ── */
+.ds-alert { @apply flex gap-3 rounded-lg border border-red-500/20 bg-redsoft px-5; }
+
+/* ── ds-stepper__btn — the pax popover's −/+ buttons (flights/index.html stepper
+      macro): one definition of the cluster all six buttons shared. ── */
+.ds-stepper__btn {
+  @apply flex h-7 w-7 items-center justify-center rounded-lg border border-line
+         text-ink transition hover:bg-soft active:scale-95
+         disabled:pointer-events-none disabled:opacity-40;
+}
+
+/* ── Itinerary map chrome — moved verbatim from templates/itinerary/planner.html's
+      inline <style> (refactor §5.1). Pin/cluster colours are FIXED (contrasted
+      against OSM tiles, which never follow the page theme); popup surfaces use
+      the ds CSS variables so dark mode just works. .ds-itin-map-frame isolates the
+      stack so Leaflet's z-400/700 panes can never cover the sticky header
+      (z-40). The five .leaflet-* overrides stayed INLINE in the template:
+      leaflet.css loads lazily into <head> AFTER this sheet, so only rules
+      later in document order can win the specificity tie. ── */
+.ds-itin-map-frame { isolation: isolate; }
+.ds-itin-pin-wrap { background: none; border: none; }
+/* pills CARRY their meaning (user direction): a pin reads «ایستگاه ۲», a
+   cluster reads «۳ مکان» — a bare digit could be a stop number or a count */
+.ds-itin-pin {
+  display: inline-flex; align-items: center; justify-content: center; gap: 3px;
+  height: 26px; padding: 0 10px; border-radius: 9999px; white-space: nowrap;
+  background: var(--c, #e91e33); color: #fff;
+  font: 700 11px/1 IRANYekanX, Vazirmatn, system-ui, Tahoma, sans-serif;
+  border: 2px solid #fff; box-shadow: 0 1px 4px rgba(15, 23, 42, .4);
+  cursor: pointer;
+}
+.ds-itin-pin small {
+  font-size: 9px; font-weight: 500; opacity: .85;
+}
+.ds-itin-cluster {
+  display: inline-flex; align-items: center; justify-content: center; gap: 3px;
+  height: 26px; padding: 0 10px; border-radius: 9999px; white-space: nowrap;
+  background: #1e293b; color: #fff;
+  font: 700 11px/1 IRANYekanX, Vazirmatn, system-ui, Tahoma, sans-serif;
+  border: 2px solid #fff; box-shadow: 0 1px 6px rgba(15, 23, 42, .45);
+  cursor: pointer;
+}
+.ds-itin-cluster small {
+  font-size: 9px; font-weight: 500; opacity: .85;
+}
+.ds-itin-cluster:hover, .ds-itin-pin:hover { filter: brightness(1.12); }
+.ds-itin-pop__stop { font-size: 10px; color: var(--sky-500); }
+.ds-itin-pop__name { margin-top: 1px; font-size: 13px; font-weight: 700; }
+.ds-itin-pop__cat { margin-top: 2px; font-size: 10px; color: var(--sky-500); }
+/* (the former inline popup price/CTA rules merged into ds-price-highlight--popup and
+   ds-button--red — one implementation of each idiom, see above) */
+.ds-itin-map-error {
+  display: flex; height: 100%; align-items: center; justify-content: center;
+  padding: 1rem; text-align: center; font-size: 12px; color: var(--sky-500);
+}
+
+/* ── ds-info-pop — the «؟» explainer popover (itinerary meta cluster): the
+      methodology / trust / aggregator-contract copy that used to sit between
+      the title and the plan in three stacked blocks, on demand instead —
+      one visible fact row, full story behind the trigger. Behaviour
+      (static/js/info_pop.js): hover opens (mouse pointers only), click /
+      Enter / Space toggles + PINS, Esc / outside click / focus-out close;
+      open state rides .hidden + aria-expanded, never a BEM class.
+      Anchoring contract: the panel is inline-START-anchored to the trigger,
+      so the trigger must LEAD its row (right edge in RTL) — the panel then
+      opens back over the row itself, with no JS measuring. --pop-shift
+      overspends that edge on purpose (user direction, twice on 2026-10-10:
+      «یکم سمت راست تر», then «سمت راست تر باز شه» — the flat 12px read as
+      no move at all), and the notch compensates so it stays centered under
+      the «؟» at every shift value. The shift FOLLOWS the viewport's free
+      margin past the 1152px column: the 12px floor stays under the 16px
+      px-4 gutter (can never push the panel off a 390px viewport), the
+      -16px middle term absorbs 100vw's classic-scrollbar overspend (safe
+      through the 1152–1184px no-margin band), and the 88px cap keeps ≥72px
+      of air at 1440px. Surface = the ds-modal family (fog + sky-300 +
+      shadow-md); the item lanes are the page's chip lanes (green = trust,
+      blue = method, red = commerce). ── */
+.ds-info-pop {
+  --pop-shift: clamp(12px, calc((100vw - 1152px) / 2 - 16px), 88px);
+  position: relative; display: inline-flex;
+}
+.ds-info-pop__trigger {
+  display: inline-flex; align-items: center; justify-content: center;
+  flex: 0 0 auto; width: 22px; height: 22px; padding: 0;
+  color: var(--sky-500); background: var(--sky-100);
+  border: 1px solid transparent; border-radius: 9999px; cursor: pointer;
+  transition: color .15s ease, border-color .15s ease;
+}
+/* quiet-to-focus hover like the page's icon handoffs; the focus ring is
+   color-mix because an alpha utility on a var-backed token cannot compile
+   (the NB above) */
+.ds-info-pop__trigger:hover {
+  color: var(--blue-600);
+  border-color: color-mix(in srgb, var(--blue-600) 35%, transparent);
+}
+.ds-info-pop__trigger:focus-visible {
+  outline: none; border-color: var(--blue-600);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue-600) 40%, transparent);
+}
+.ds-info-pop__panel {
+  position: absolute; top: 100%; inset-inline-start: calc(-1 * var(--pop-shift)); z-index: 30;
+  width: min(380px, calc(100vw - 2rem)); margin-top: 10px;
+  background: var(--bg-fog); border: 1px solid var(--sky-300);
+  border-radius: 8px; box-shadow: var(--shadow-md); padding: 14px 16px 16px;
+  text-align: start;
+}
+/* the notch back up to the trigger — one rotated square carries fill + the
+   two borders of its up-pointing corner (physical top/left: the rotated
+   shape mirrors fine in RTL); + the shift keeps it centered under the «؟»
+   while the panel itself nudges past the trigger's edge */
+.ds-info-pop__panel::before {
+  content: ""; position: absolute; top: -5px; inset-inline-start: calc(11px + var(--pop-shift));
+  width: 8px; height: 8px; background: var(--bg-fog);
+  border-top: 1px solid var(--sky-300); border-left: 1px solid var(--sky-300);
+  transform: rotate(45deg);
+}
+.ds-info-pop__title { font-size: 12px; font-weight: 700; color: var(--sky-800); }
+.ds-info-pop__close {
+  display: flex; align-items: center; justify-content: center;
+  flex: 0 0 auto; width: 24px; height: 24px; padding: 0;
+  color: var(--sky-500); background: transparent; border: 0; border-radius: 6px;
+  cursor: pointer; transition: background-color .15s ease, color .15s ease;
+}
+.ds-info-pop__close:hover { background: var(--sky-100); color: var(--sky-800); }
+.ds-info-pop__close:focus-visible { outline: 2px solid var(--blue-600); outline-offset: 1px; }
+.ds-info-pop__item { display: flex; align-items: flex-start; gap: 10px; }
+.ds-info-pop__icon {
+  display: flex; align-items: center; justify-content: center;
+  flex: 0 0 auto; width: 26px; height: 26px; border-radius: 9999px;
+}
+.ds-info-pop__icon--green { background: var(--green-50); color: var(--green-800); border: 1px solid rgba(34, 197, 94, .25); }
+.ds-info-pop__icon--blue { background: var(--blue-50); color: var(--blue-800); border: 1px solid rgba(59, 130, 246, .25); }
+.ds-info-pop__icon--red { background: var(--red-50); color: var(--red-800); border: 1px solid rgba(239, 68, 68, .3); }
+.ds-info-pop__item-title { font-size: 11px; font-weight: 700; line-height: 1.6; }
+.ds-info-pop__item-title--green { color: var(--green-800); }
+.ds-info-pop__item-title--blue { color: var(--blue-800); }
+.ds-info-pop__item-title--red { color: var(--red-800); }
+.ds-info-pop__item-text { margin: 2px 0 0; font-size: 11px; line-height: 1.8; color: var(--sky-500); }
+.ds-info-pop__item-text strong { color: var(--sky-800); }

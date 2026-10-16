@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}{{ meta.title }}{% endblock %}
+{% block meta_description %}{{ meta.description }}{% endblock %}
+
+{% block content %}
+
+{# ── برنامهٔ سفر landing — the feature's front door (the header touchpoint
+      lands here; deep links jump straight to /itinerary/<city>). Same shell
+      as the /pages/* family: fog card, prose column, ds-chips, native
+      <details> FAQ. ── #}
+<section class="mx-auto w-full max-w-3xl px-4 pb-16 pt-8 sm:pt-10">
+  <article class="rounded-lg border border-line bg-fog px-5 py-7 shadow-card sm:px-9 sm:py-9">
+
+    {# ── hero ── #}
+    <div class="flex items-center gap-2.5">
+      {% set mark_class = "h-8 w-8" %}
+      {% set gid = "ai-hero" %}
+      {% include "components/ai_spark.html" %}
+      <h1 class="text-xl font-bold text-ink">برنامهٔ سفر با هوش مصنوعی</h1>
+    </div>
+    <p class="mt-3 text-[13px] leading-7 text-muted">
+      بلیت خریدی؟ دیگر لازم نیست ساعت‌ها دنبال «کجا بریم و چطور بچینیم» بگردی.
+      برنامهٔ سفر ترب بلیت برای مقصدت یک برنامهٔ چند روزهٔ قابل‌پیاده‌شدن می‌چیند —
+      با نقشهٔ تعاملی، تایم‌لاین فارسی و روایت سفر.
+    </p>
+
+    {# ── Kish handoff — demo-seed call-to-action for the live itinerary, the
+          shared touchpoint_strip anatomy in the action-blue lane (bg-bluesoft
+          flips with the theme; icon = the ai_spark gradient glyph) ── #}
+    {% with strip_variant="ai",
+            strip_gid="ai-strip-top",
+            strip_lead="میدونیم از کیش بلیت گرفتی!",
+            strip_body="برای همین برات یه برنامهٔ سفر ۳ روزه با هوش مصنوعی چیدیم.",
+            strip_cta="دیدن برنامهٔ سفر",
+            strip_href="/itinerary/kish",
+            strip_cta_label="دیدن برنامهٔ سفر",
+            strip_cta_title="برنامهٔ سفر ۳ روزهٔ کیش",
+            strip_extra="mt-5" %}
+      {% include "components/touchpoint_strip.html" %}
+    {% endwith %}
+
+    {# quick access — the help-center «دسترسی سریع» pattern, ds-chip pills #}
+    <nav aria-label="دسترسی سریع" class="mt-6 flex flex-wrap gap-1.5">
+      <a href="#how" class="inline-flex min-h-7 items-center rounded-full bg-soft px-2.5 py-0.5 text-xs text-muted transition hover:text-ink">چطور کار می‌کند؟</a>
+      <a href="#cities" class="inline-flex min-h-7 items-center rounded-full bg-soft px-2.5 py-0.5 text-xs text-muted transition hover:text-ink">شهرها</a>
+      <a href="#about" class="inline-flex min-h-7 items-center rounded-full bg-soft px-2.5 py-0.5 text-xs text-muted transition hover:text-ink">درباره</a>
+      <a href="#faq" class="inline-flex min-h-7 items-center rounded-full bg-soft px-2.5 py-0.5 text-xs text-muted transition hover:text-ink">سوالات متداول</a>
+    </nav>
+
+    {# ── how it works — three numbered steps ── #}
+    <h2 id="how" class="mt-7 scroll-mt-20 text-[15px] font-bold text-ink">چطور کار می‌کند؟</h2>
+    <div class="mt-3 grid gap-2">
+      {% set steps = [
+        ("۱", "بلیتت را می‌خری", "مثل همیشه در ترب بلیت جستجو و مقایسه می‌کنی؛ ما مقصدت را می‌شناسیم."),
+        ("۲", "مکان‌ها را می‌چینیم", "جاذبه‌های شهر بر اساس محبوبیت انتخاب و بر اساس جغرافیا خوشه‌بندی می‌شوند؛ هر خوشه یک روزِ سفر است تا مسافت‌ها منطقی بمانند."),
+        ("۳", "مسیر و روایت را می‌سازیم", "مسیر هر روز با الگوریتم بهینه می‌شود، هوش مصنوعی روایتِ فارسی سفر را می‌نویسد و همه‌چیز روی یک نقشهٔ تعاملی و تایم‌لاین هم‌گام نمایش داده می‌شود."),
+      ] %}
+      {% for num, title, text in steps %}
+      <div class="flex items-start gap-3 rounded-lg border border-line px-4 py-3">
+        <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-focus text-xs font-bold text-white">{{ num }}</span>
+        <p class="min-w-0 text-xs leading-6">
+          <span class="font-bold text-ink">{{ title }}.</span>
+          <span class="text-muted"> {{ text }}</span>
+        </p>
+      </div>
+      {% endfor %}
+    </div>
+
+    {# ── cities — the "ready for more cities" signal ── #}
+    <h2 id="cities" class="mt-7 scroll-mt-20 text-[15px] font-bold text-ink">برای کدام شهرها؟</h2>
+    <div class="mt-3 flex flex-wrap items-center gap-2">
+      {% for city in cities %}
+      <a href="/itinerary/{{ city.code }}"
+         class="ds-chip ds-chip--active inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-xs font-bold transition">
+        {{ city.name_fa }}
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      </a>
+      {% endfor %}
+      {% for upcoming in ["تهران", "مشهد", "شیراز", "تبریز"] %}
+      <span class="inline-flex h-9 cursor-default items-center gap-1.5 rounded-full border border-line bg-soft px-3.5 text-xs text-muted" title="به‌زودی">
+        {{ upcoming }}
+        <span class="text-[10px]">به‌زودی</span>
+      </span>
+      {% endfor %}
+    </div>
+
+    {# ── about ── #}
+    <h2 id="about" class="mt-7 scroll-mt-20 text-[15px] font-bold text-ink">دربارهٔ برنامهٔ سفر</h2>
+    <p class="mt-3 text-xs leading-7 text-muted">
+      برنامهٔ سفر ترب بلیت «نورو-سمبولیک» است: انتخاب مکان‌ها، خوشه‌بندی روزها و بهینه‌سازی مسیر را
+      الگوریتم‌های مشخص انجام می‌دهند و مدل زبانی فقط روایت را می‌افزاید — نمی‌تواند مکانی را حذف،
+      اضافه یا جابه‌جا کند. نقشه و تایم‌لاین فارسی از یک لیست واحد رندر می‌شوند، پس چیزی که
+      می‌خوانی همان چیزی است که روی نقشه می‌بینی. این نسخه با مکان‌های منتخب کیش راه‌اندازی شده
+      و به‌زودی با داده‌های کامل‌تر و شهرهای بیشتری گسترش پیدا می‌کند.
+    </p>
+
+    {# ── FAQ — the /pages/faq.html accordion pattern ── #}
+    <h2 id="faq" class="mt-7 scroll-mt-20 text-[15px] font-bold text-ink">سوالات متداول برنامهٔ سفر</h2>
+    <div class="mt-3 grid gap-2">
+      {% set faqs = [
+        ("برنامهٔ سفر چطور چیده می‌شود؟",
+         "مکان‌های شناخته‌شدهٔ شهر بر اساس محبوبیت انتخاب و با خوشه‌بندی جغرافیایی بین روزهای سفر تقسیم می‌شوند — هر روز یک محور. مسیر داخل هر روز هم با الگوریتم نزدیک‌ترین همسایه بهینه می‌شود تا بیشترین وقت برای خودِ سفر بماند."),
+        ("مکان‌های برنامه از کجا می‌آیند؟",
+         "جاذبه‌های واقعی و شناخته‌شدهٔ شهرند، نه فهرست ساختگی: مختصات هر کدام از داده‌های آزاد OpenStreetMap و ویکی‌پدیا آمده و توضیح و عکسش به مقالهٔ ویکی‌پدیای خودش وصل است — هر ادعایی را می‌توانی در منبع اصلی‌اش چک کنی."),
+        ("هوش مصنوعی دقیقاً چه کاری می‌کند؟",
+         "فقط روایت. انتخاب مکان‌ها و ترتیب‌شان دست الگوریتم است و مدل زبانی همان مسیر را با زبان سفر تعریف می‌کند؛ نه مکان اضافه می‌کند نه ترتیب را عوض می‌کند."),
+        ("الان برای چه شهرهایی فعال است؟",
+         "کیش. تهران، مشهد، شیراز و دیگر شهرها به‌زودی اضافه می‌شوند؛ چیدمان برنامه برای هر شهر جدید یک‌بار تنظیم می‌شود."),
+        ("استفاده از برنامهٔ سفر هزینه دارد؟",
+         "نه، رایگان است و به قیمت بلیت هواپیما هم چیزی اضافه نمی‌شود. برای جاذبه‌های نیازمند بلیت، لینک خرید همان تأمین‌کننده را می‌گذاریم؛ خرید مستقیم و بدون افزایش قیمت — ترب این‌جا هم فقط مقایسه می‌کند، خودش چیزی نمی‌فروشد."),
+        ("می‌توانم برنامه را تغییر بدهم؟",
+         "در این نسخه خیر — نسخهٔ نمایشی است. برنامه‌ریزی شخصی‌سازی‌شده بر اساس علاقه‌ها، تعداد روز و بودجه در نسخه‌های بعدی اضافه می‌شود."),
+        ("زمان‌ها و قیمت‌های داخل برنامه دقیق‌اند؟",
+         "زمان پیشنهادیِ دیدن هر مکان تقریبی و بر اساس تجربهٔ بازدید است؛ مسیرهای نقشه هم خط مستقیم بین ایستگاه‌هاست، نه مسیر رانندگی واقعی؛ قیمت بلیت جاذبه‌ها هم همان نرخ اعلامیِ تأمین‌کننده در لحظهٔ خرید است."),
+      ] %}
+      {% for q, a in faqs %}
+      <details class="group rounded-lg border border-line bg-fog px-4 py-3">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 text-[13px] font-bold text-ink [&::-webkit-details-marker]:hidden">
+          {{ q }}
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 shrink-0 text-muted transition group-open:rotate-180" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <p class="mt-2 border-t border-soft pt-2 text-xs leading-6 text-muted">{{ a }}</p>
+      </details>
+      {% endfor %}
+    </div>
+
+    {# ── closing CTA — the same touchpoint_strip anatomy bookends the page ── #}
+    {% with strip_variant="ai",
+            strip_gid="ai-strip-close",
+            strip_lead="برنامهٔ سفر کیشت آمادهٔ دیدن است.",
+            strip_body="برنامهٔ ۳ روزهٔ کامل با نقشه و روایت را ببین.",
+            strip_cta="دیدن برنامهٔ سفر کیش",
+            strip_href="/itinerary/kish",
+            strip_cta_label="دیدن برنامهٔ سفر کیش",
+            strip_extra="mt-7" %}
+      {% include "components/touchpoint_strip.html" %}
+    {% endwith %}
+
+  </article>
+</section>
+
+{% endblock %}

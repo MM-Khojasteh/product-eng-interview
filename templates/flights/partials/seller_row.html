@@ -1,0 +1,100 @@
+{# ── One agency offer — ds-seller-list row, mirroring torob.com's shop-card
+      anatomy: logo tile + name + Torob-Pay mark, the green scoreBadge pill
+      «★۴٫۵ (۱۱ سال سابقه)», per-fare chips چارتری/سیستمی · بار · استرداد,
+      «آخرین N صندلی» scarcity, and the price-credit-btn column (price over a
+      wide «خرید اینترنتی» ds-button--red). Shared by the Compare modal and
+      the PDP. Two states:
+        live     → price + delta + CPC «خرید» handoff (cheapest row gets the badge)
+        sold_out → per-fare tombstone (proposal_key HDEL'd or capacity hit 0):
+                   identity block kept (agency facts), fare chips suppressed,
+                   NO handoff button — «ظرفیت تکمیل شد»
+      Expects `row` (agency/price/delta/sold_out/is_best/deeplink + per-fare
+      is_charter/seats/baggage_kg/baggage_cabin/refundable) from the loop
+      context; the flag is carried ON the row because Jinja's `loop` special
+      does not propagate through {% include %}. data-tpay/data-baggage/
+      data-refundable ride BUYABLE rows only — any active chip filter hides
+      tombstones (search.js §3, AND semantics over data-offer-row). ── #}
+<li data-offer-row
+    {% if not row.sold_out %}
+    {% if row.agency.torob_pay %}data-tpay{% endif %}
+    {% if row.baggage_kg %}data-baggage{% endif %}
+    {% if row.refundable %}data-refundable{% endif %}
+    {% endif %}
+    class="ds-seller-card{% if row.sold_out %} ds-seller-card--sold-out{% elif row.is_best %} ds-seller-card--best{% endif %}">
+  <div class="flex items-center justify-between gap-2.5">
+    <div class="flex min-w-0 items-center gap-2.5">
+      {% set logo = row.agency.logo %}{% set color = row.agency.color %}{% set initial = row.agency.name[:1] %}
+      {% set tile_class = 'h-8 w-8' %}{% set img_class = 'h-6 w-6' %}
+      {% include "flights/partials/logo_tile.html" %}
+      <div class="grid min-w-0 gap-1">
+        <p class="flex flex-wrap items-center gap-1.5 text-[13px] {{ 'font-bold text-muted' if row.sold_out else 'font-bold text-ink' }}">
+          <span class="truncate">{{ row.agency.name }}</span>
+          {% if row.agency.torob_pay %}
+          <span class="inline-flex shrink-0 items-center gap-1 text-[10px] font-medium text-greenink" title="پرداخت امن با ترب‌پی">
+            {% set mark_class = 'h-3.5 w-3.5' %}{% include "components/torob_pay_mark.html" %}ترب‌پی
+          </span>
+          {% endif %}
+          {% if row.is_best and not row.sold_out %}
+          <span class="ds-badge ds-badge--best shrink-0">ارزان‌ترین</span>
+          {% endif %}
+        </p>
+        {% if row.sold_out %}
+        <p class="text-[10px] text-muted">آخرین قیمت ثبت‌شده {{ row.price | toman }}</p>
+        {% else %}
+        {# score pill — torob.com scoreBadge anatomy: «★۴٫۵ (۱۱ سال سابقه)» as a
+           green pill (greensoft/greenink tokens ≈ the capture's #daf2d5/#0b5124,
+           theme-aware), delta + scarcity as light text after it #}
+        <p class="flex flex-wrap items-center gap-1.5">
+          <span class="ds-badge ds-badge--score">
+            <span aria-hidden="true">★</span>{{ row.agency.rating | fa_num }}{% if row.agency.years_active %} ({{ row.agency.years_active | fa_num }} سال سابقه){% endif %}
+          </span>
+          {% if not row.is_best %}
+          <span class="text-[10px] tabular-nums text-muted">{{ row.delta | toman }} گران‌تر</span>
+          {% endif %}
+          {% if row.seats and row.seats <= 9 %}
+          <span class="text-[10px] font-bold text-brand">آخرین {{ row.seats | fa_num }} صندلی</span>
+          {% endif %}
+        </p>
+        <p class="flex flex-wrap items-center gap-1">
+          {% set charter = row.is_charter %}{% include "flights/partials/type_badge.html" %}
+          {% if row.baggage_kg %}
+          <span class="ds-badge ds-badge--green gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            بار {{ row.baggage_kg | fa_num }} کیلوگرم{% if row.baggage_cabin %} + {{ row.baggage_cabin | fa_num }} کابینی{% endif %}
+          </span>
+          {% endif %}
+          {% if row.refundable is not none %}
+          {% if row.refundable %}
+          <span class="ds-badge ds-badge--green gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            قابل استرداد
+          </span>
+          {% else %}
+          <span class="ds-badge ds-badge--muted">غیرقابل استرداد</span>
+          {% endif %}
+          {% endif %}
+        </p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if row.sold_out %}
+    <span class="ds-seller-card__soldout"
+          aria-disabled="true">ظرفیت تکمیل شد</span>
+    {% else %}
+    {# price-credit-btn column — torob.com anatomy: price over a WIDE
+       ds-button--red («خرید اینترنتی», not the bare «خرید»); grid children
+       stretch, so the button tracks the price column width. The link keeps
+       its utilities: it is the ds-button--red idiom but with the flat
+       bg-brand fill (NOT the gradient), and its focus-visible/active
+       variants must keep winning (cascade rule 2 — no component class). #}
+    <div class="ds-seller-card__price">
+      <p class="text-left text-sm font-bold tabular-nums text-ink">{{ row.price | toman }}</p>
+      <a href="{{ row.deeplink }}" target="_blank" rel="noopener noreferrer"
+         class="inline-flex h-8 items-center justify-center rounded-lg border border-transparent bg-brand px-2.5 text-[11px] font-medium text-white transition hover:bg-brand-hover active:scale-95 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/40">
+        خرید اینترنتی
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</li>

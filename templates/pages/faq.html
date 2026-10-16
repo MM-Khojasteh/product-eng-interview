@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}{{ meta.title }}{% endblock %}
+{% block meta_description %}{{ meta.description }}{% endblock %}
+
+{% block content %}
+
+{# ── سوالات متداول — Alibaba's help-center shape (quick-access chips → grouped
+      Q&A accordions) rendered in Torob tokens: native <details> rows on a fog
+      card, chevron rotates open, no JS needed. ── #}
+<section class="mx-auto w-full max-w-3xl px-4 pb-16 pt-8 sm:pt-10">
+  <article class="rounded-lg border border-line bg-fog px-5 py-7 shadow-card sm:px-9 sm:py-9">
+
+    <h1 class="text-xl font-bold text-ink">سوالات متداول</h1>
+
+    {# quick access — the help-center «دسترسی سریع» pattern, ds-chip pills #}
+    <nav aria-label="دسترسی سریع" class="mt-4 flex flex-wrap gap-1.5">
+      <a href="#general" class="inline-flex min-h-7 items-center rounded-full bg-soft px-2.5 py-0.5 text-xs text-muted transition hover:text-ink">پرسش‌های عمومی</a>
+      <a href="#buying" class="inline-flex min-h-7 items-center rounded-full bg-soft px-2.5 py-0.5 text-xs text-muted transition hover:text-ink">خرید بلیت</a>
+      <a href="#refunds" class="inline-flex min-h-7 items-center rounded-full bg-soft px-2.5 py-0.5 text-xs text-muted transition hover:text-ink">استرداد و کنسلی</a>
+    </nav>
+
+    {# ── the Q&A groups — one <details> definition (the itinerary/landing.html
+          faqs-loop pattern); answers are joined single-line (the former
+          hand-copied multi-line <p> bodies collapse to the same rendered
+          text — whitespace-only difference). ── #}
+    {% set faq_groups = [
+      ("general", "پرسش‌های عمومی", [
+        ("ترب بلیت چیست و چه کاری انجام می‌دهد؟",
+         "ترب بلیت موتور مقایسه قیمت بلیت هواپیماست؛ مثل ترب که قیمت کالاها را بین فروشگاه‌ها مقایسه می‌کند، ترب بلیت قیمتِ همان پرواز را بین آژانس‌های فروش بلیت مقایسه می‌کند تا ارزان‌ترین را پیدا کنید."),
+        ("آیا خودتان بلیت می‌فروشید؟",
+         "خیر. ترب بلیت آژانس مسافرتی نیست؛ ما فقط قیمت‌ها را مقایسه می‌کنیم. وقتی روی «خرید» بزنید، خرید و پرداخت در سایت همان آژانسی انجام می‌شود که بلیت را می‌فروشد و صدور بلیت هم توسط همان آژانس است."),
+        ("استفاده از ترب بلیت هزینه‌ای دارد؟",
+         "خیر، استفاده از ترب بلیت برای مسافر کاملاً رایگان است و به قیمت بلیت هیچ مبلغی اضافه نمی‌شود. درآمد ترب بلیت از همکاری با آژانس‌هاست، نه از قیمت خرید شما."),
+        ("«کف قیمت» که روی هر پرواز می‌بینم یعنی چه؟",
+         "کف قیمت، ارزان‌ترین قیمتی است که بین آژانس‌ها برای همان پرواز دیده شده است. با زدن «خرید»، فهرست همهٔ آژانس‌ها را با قیمت‌هایشان کنار هم می‌بینید تا ارزان‌ترین را انتخاب کنید."),
+      ]),
+      ("buying", "خرید بلیت", [
+        ("چطور بلیت بخرم؟",
+         "مبدأ، مقصد و تاریخ را در جستجو وارد کنید؛ در صفحهٔ نتایج قیمتِ همان پرواز از آژانس‌های مختلف را ببینید، آژانس مدنظر را انتخاب کنید تا به سایت او بروید و پرداخت را همان‌جا انجام دهید. بلیت پس از صدور از سمت همان آژانس برایتان ارسال می‌شود."),
+        ("قیمت در سایت آژانس با قیمت ترب بلیت فرق داشت؛ چرا؟",
+         "قیمت بلیت هواپیما لحظه‌ای تغییر می‌کند و ظرفیت هر نرخ محدود است. ترب بلیت قیمت‌ها را در لحظهٔ کلیک دوباره بررسی می‌کند، اما اگر بین کلیک شما و تکمیل خرید قیمت تغییر کند، قیمت نهایی همان است که سایت آژانس نشان می‌دهد. اگر مغایرت بزرگی دیدید، چند لحظه بعد دوباره جستجو کنید."),
+        ("بلیت چارتری و سیستمی چه تفاوتی دارند؟",
+         "بلیت سیستمی مستقیم از شرکت هواپیمایی صادر می‌شود و قوانین استاندارد همانی است که خود ایرلاین تعیین کرده (مثل نرخ کودک و شرایط استرداد). بلیت چارتری از سمت چارترکنندهٔ پرواز عرضه می‌شود و اغلب ارزان‌تر است، اما معمولاً غیرقابل‌استرداد است و قیمت بلیت کودک و نوزاد در آن با بزرگسال یکسان است."),
+        ("بلیت کودک و نوزاد چطور محاسبه می‌شود؟",
+         "در پروازهای داخلی، نوزاد زیر ۲ سال معمولاً حدود ۱۰ درصد نرخ بزرگسال را می‌پردازد و صندلی جداگانه ندارد؛ کودک ۲ تا ۱۲ سال معمولاً بین ۵۰ تا ۷۵ درصد نرخ بزرگسال است. در پروازهای چارتری، قیمت کودک و نوزاد اغلب با بزرگسال یکسان است. کودک و نوزاد باید همراه بزرگسال باشند."),
+        ("برای بیش از ۹ مسافر چه کنم؟",
+         "خرید گروهی شرایط خاص خودش را دارد. قیمت‌ها را برای ۹ نفر با ترب بلیت مقایسه کنید، اما برای صدور گروهی و نرخ توافقی با پشتیبانی همان آژانسی که انتخاب می‌کنید در ارتباط باشید."),
+      ]),
+      ("refunds", "استرداد و کنسلی", [
+        ("بلیتم را چطور کنسل کنم؟",
+         "درخواست کنسلی و استرداد باید از طریق همان آژانسی انجام شود که بلیت را از او خریده‌اید؛ ترب بلیت در فرآیند صدور و استرداد نقشی ندارد. از پنل کاربری یا پشتیبانی همان سایت آژانس درخواست استرداد ثبت کنید."),
+        ("جریمهٔ کنسلی چقدر است؟",
+         "بسته به شرکت هواپیمایی، کلاس نرخ و اینکه چقدر تا زمان پرواز مانده متفاوت است؛ هر چه به پرواز نزدیک‌تر باشید جریمه بیشتر می‌شود. بلیت‌های چارتری در بیشتر موارد قابل استرداد نیستند یا جریمهٔ صددرصد دارند — قبل از خرید، شرایط درج‌شده در سایت آژانس را بخوانید."),
+        ("اگر ایرلاین پرواز را لغو کند چه می‌شود؟",
+         "لغو یا تأخیر پرواز مسئولیت شرکت هواپیمایی است. طبق قوانین رایج، در صورت لغو پرواز استرداد کامل یا پرواز جایگزین انجام می‌شود؛ پیگیری از طریق آژانس خریدار و با ارائهٔ بلیت و مدارک است."),
+        ("پول استرداد کِی و به کجا برمی‌گردد؟",
+         "مبلغ استرداد به همان کارتی برمی‌گردد که خرید با آن انجام شده است و معمولاً ظرف چند ساعت تا ۷۲ ساعت کاری (بسته به بانک و آژانس) واریز می‌شود."),
+      ]),
+    ] %}
+    {% for group_id, group_title, group_items in faq_groups %}
+    <h2 id="{{ group_id }}" class="mt-7 scroll-mt-20 text-[15px] font-bold text-ink">{{ group_title }}</h2>
+    <div class="mt-3 grid gap-2">
+      {% for q, a in group_items %}
+      <details class="group rounded-lg border border-line bg-fog px-4 py-3">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 text-[13px] font-bold text-ink [&::-webkit-details-marker]:hidden">
+          {{ q }}
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 shrink-0 text-muted transition group-open:rotate-180" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <p class="mt-2 border-t border-soft pt-2 text-xs leading-6 text-muted">{{ a }}</p>
+      </details>
+      {% endfor %}
+    </div>
+    {% endfor %}
+
+  </article>
+</section>
+
+{% endblock %}

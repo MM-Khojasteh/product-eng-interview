@@ -1,0 +1,4 @@
+# Local development + CI: both deployables plus the test runner.
+-r web.txt
+-r pipelines.txt
+pytest>=8

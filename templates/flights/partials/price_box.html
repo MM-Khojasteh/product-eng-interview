@@ -1,0 +1,15 @@
+{# ── ds-price-highlight: کف قیمت — extracted from the card so the OOB liveness
+      pulse (/search/flights/live) can re-swap JUST this box in place via
+      id="price-{{ flight.id }}" (physical_flight_key — hex, dot-free, safe as
+      an hx-swap-oob target). Pass oob=True from the pulse to emit the wrapper.
+      The seats badge lives here (not in the time column) so scarcity refreshes
+      together with the price on every tick. ── #}
+<div id="price-{{ flight.id }}" {% if oob %}hx-swap-oob="true"{% endif %}
+     class="ds-price-highlight ds-price-highlight--list">
+  <span class="ds-price-highlight__label">کف قیمت</span>
+  <strong class="ds-price-highlight__amount text-[22px]">{{ flight.min_price | toman }}</strong>
+  <span class="ds-price-highlight__note whitespace-nowrap tabular-nums">برای هر مسافر · از {{ flight.agency_count | fa_num }} آژانس</span>
+  {% if flight.seats_left and flight.seats_left <= 5 %}
+  <span class="ds-price-highlight__scarcity">فقط {{ flight.seats_left | fa_num }} صندلی باقی مانده</span>
+  {% endif %}
+</div>

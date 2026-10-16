@@ -1,0 +1,9 @@
+# Build-context allowlist: the pipeline image (Dockerfile) needs only
+# pipelines/ and requirements/pipelines.txt. Everything else — notably .env
+# and the private research — never reaches the Docker daemon, even if a
+# future COPY widens.
+*
+!pipelines
+!requirements/pipelines.txt
+**/__pycache__
+**/*.py[cod]

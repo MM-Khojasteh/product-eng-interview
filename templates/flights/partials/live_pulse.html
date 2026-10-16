@@ -1,0 +1,27 @@
+{# ── OOB-only response of /search/flights/live. The trigger element carries
+      hx-swap="none", so ONLY hx-swap-oob content is processed: full cards for
+      flights streamed in by LATER Alibaba chunks (beforeend insert into
+      #flight-cards — HTMX silently drops OOB ids with no DOM target, so a NEW
+      flight must arrive as its whole card, not just a price box), refreshed
+      price boxes, deletes for tombstoned cards, and the next ticker — absent
+      when the scan completed, which makes the polling server-driven and
+      self-extinguishing (no client timer to leak; sort/filter re-renders
+      re-arm it). ── #}
+{% for flight in added %}
+  {% with oob = true %}{% include "flights/partials/flight_card.html" %}{% endwith %}
+{% endfor %}
+
+{% for flight in changed %}
+  {% with oob = true %}{% include "flights/partials/price_box.html" %}{% endwith %}
+{% endfor %}
+
+{% for flight_id in removed %}{# tombstoned between ticks — vanish in place #}
+  <article id="flight-{{ flight_id }}" hx-swap-oob="delete"></article>
+{% endfor %}
+
+{% if complete %}
+<div id="live-ticker" hx-swap-oob="delete"></div>
+{% else %}
+<div id="live-ticker" hx-get="/search/flights/live?{{ live_qs }}"
+     hx-trigger="load delay:2s" hx-swap="none" hx-swap-oob="true" aria-hidden="true"></div>
+{% endif %}

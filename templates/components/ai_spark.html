@@ -1,0 +1,22 @@
+{# ── AI-planner mark — lucide `sparkles` glyph as a bare luminous glyph (no
+      tile): the 4-point star is FILLED with a sky→focus blue gradient and the
+      mini plusses stroke the same gradient, plus a faint sky drop-shadow for
+      an AI-glow feel. gradientUnits=userSpaceOnUse so the shared gradient
+      also renders on the zero-width plus strokes; the deep stop rides
+      var(--blue-600) (inline style — vars don't work as presentation
+      attributes) so it follows the light/dark token flip with no Tailwind
+      rebuild. Pass a unique gid per include site (defs ids must not collide).
+      Sibling of torob_mark.html — size via mark_class. ── #}
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+     class="shrink-0 {{ mark_class | default('h-5 w-5') }}" style="filter:drop-shadow(0 1px 1.5px rgba(56,189,248,.5))" aria-hidden="true">
+  <defs>
+    <linearGradient id="{{ gid | default('ai-glow') }}" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22">
+      <stop offset="0" stop-color="#38bdf8"/>
+      <stop offset="1" style="stop-color:var(--blue-600)"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#{{ gid | default('ai-glow') }})" stroke="none" d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+  <g stroke="url(#{{ gid | default('ai-glow') }})">
+    <path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>
+  </g>
+</svg>

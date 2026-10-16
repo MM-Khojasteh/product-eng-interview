@@ -1,0 +1,418 @@
+{% extends "base.html" %}
+
+{% block title %}برنامهٔ سفر {{ days_count | fa_num }} روزه در {{ city.name_fa }} | ترب بلیت{% endblock %}
+{% block meta_description %}برنامهٔ سفر هوشمند {{ city.name_fa }} با هوش مصنوعی — مسیر روزانه روی نقشه، بهینه‌شده بر اساس فاصله، و مقایسهٔ قیمت تفریحات از تأمین‌کنندگان مختلف.{% endblock %}
+
+{% block content %}
+<section class="mx-auto w-full max-w-6xl px-4 pb-16 pt-6">
+
+  {# ds-breadcrumbs #}
+  <nav aria-label="مسیر" class="ds-breadcrumbs">
+    <a href="/" class="ds-breadcrumbs__link">خانه</a>
+    <span aria-hidden="true">/</span>
+    <span>برنامهٔ سفر {{ city.name_fa }}</span>
+  </nav>
+
+  {% if not days_view %}
+  {# ── empty city state (registry city with no catalog yet) ── #}
+  <div class="mt-4 rounded-lg border border-line bg-fog p-10 text-center shadow-card">
+    <p class="text-sm font-bold text-ink">هنوز برنامه‌ای برای {{ city.name_fa }} نداریم.</p>
+    <p class="mt-1 text-xs text-muted">کاتالوگ مکان‌های این شهر به‌زودی کامل می‌شود؛ فعلاً کیش را امتحان کن.</p>
+    <a href="/itinerary/kish"
+       class="ds-button--brand mt-4 inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium transition">برنامهٔ سفر کیش</a>
+  </div>
+  {% else %}
+
+  {# ── Budget roll-up input — جمع کف قیمت تفریحات بلیت‌دار (rendered beside
+        the h1, ds-price-highlight idiom). sum(start=[]) concatenates the
+        per-day place lists; selectattr keeps truthy price floors. ── #}
+  {% set ticketed_places = days_view | map(attribute="places") | sum(start=[]) | selectattr("lowest_price") | list %}
+  {# every buyable stop — redirect_url is set iff has_ticket (PlaceOut
+        contract), priced or not: the «تأمین‌کنندگان» modal lists them all;
+        the roll-up above sums only the priced ones. Supplier marks + names
+        come from the AGENCIES registry via the supplier_of filter — one
+        source of truth with the ticket part, unknown hosts render the
+        mark-less fallback (no invented marks). ── #}
+  {% set buyable_stops = days_view | map(attribute="places") | sum(start=[]) | selectattr("redirect_url") | list %}
+
+  {# ── Category chip lanes — the tinted-pill idiom of the ticket-part chips
+        (seller_row: border-green-500/20 bg-greensoft text-greenink, and the
+        redsoft/redink price pills), keyed by raw PlaceOut.category; unknown
+        categories fall back to the neutral lane. Semantic: red = دیدنی‌ها
+        (the hero lane), blue = آب (ساحل/ورزش آبی), green = خرید/غذا/تفریح. ── #}
+  {% set category_lanes = {
+    "attraction":  "border-red-500/20 bg-redsoft text-redink",
+    "beach":       "border-blue-500/20 bg-bluesoft text-blueink",
+    "water_sport": "border-blue-500/20 bg-bluesoft text-blueink",
+    "mall":        "border-green-500/20 bg-greensoft text-greenink",
+    "restaurant":  "border-green-500/20 bg-greensoft text-greenink",
+    "park":        "border-green-500/20 bg-greensoft text-greenink",
+    "activity":    "border-line bg-soft text-muted",
+  } %}
+
+  {# ── Supplier marks for the «تأمین‌کنندگان» handoff come from the AGENCIES
+        registry via the supplier_of filter (domain match on redirect_url) —
+        one source of truth with the ticket part's seller rows; an unknown
+        host renders the CTA bare (no invented marks). ── #}
+
+  {# ── Title row — the h1 and the budget roll-up on ONE line (torob PDP
+        anatomy: title + the red price-highlight box beside it).
+        items-START (user direction, 2026-10-10): the box must sit LEVEL
+        with the h1 — items-center lifted the taller box ~22px above the
+        title line. ── #}
+  <div class="mt-2 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+    <div class="min-w-0">
+      <h1 class="text-[22px] font-extrabold leading-[1.35] text-ink sm:text-[26px]">
+        برنامهٔ سفر {{ days_count | fa_num }} روزه در {{ city.name_fa }}
+      </h1>
+      <p class="mt-1 text-xs text-muted">{{ city.tagline_fa }} · بعد از بلیت، نوبت خاطره‌هاست.</p>
+
+      {# ── Meta cluster — ONE visible fact row + the «؟» (ds-info-pop),
+            INSIDE the title block directly under the tagline (user
+            direction, 2026-10-10: the «؟» + the ۱۰ مکان / مسیر بهینه‌شده /
+            روایت chips «زیر متنِ تگ‌لاین») — the row hugs the tagline
+            instead of clearing the taller budget box beside it. The
+            methodology/disclaimer copy that used to sit here in three
+            stacked blocks (honesty line, routing footnote, green
+            why-trust card) moved BEHIND the popover: summary always
+            visible, full story on hover/tap (user direction, 2026-10-10).
+            The commercial contract is still stated at every point of
+            action — the budget box's «خرید مستقیم از تأمین‌کننده» note,
+            each handoff's title, and the footer line. The trigger LEADS
+            the row on purpose: the panel anchors to the trigger's
+            inline-start edge, so it always opens back over the row itself
+            (any breakpoint) — overspent past that edge via --pop-shift,
+            which follows the viewport's free right margin (12px floor →
+            88px cap; user direction ×2, 2026-10-10: «یکم سمت راست تر»,
+            then «سمت راست تر باز شه» — the flat 12px was
+            imperceptible). ── #}
+      <div class="mt-2 flex flex-wrap items-center gap-1.5">
+        <div class="ds-info-pop">
+          <button type="button" class="ds-info-pop__trigger" aria-expanded="false" aria-controls="itin-how-built"
+                  aria-label="این برنامه چگونه ساخته شده؟">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </button>
+
+          {# the three lanes mirror the page's chip vocabulary: green = the
+             «روایت»/trust family, blue = the time/method lane, red = the
+             price/commerce lane. All copy is verbatim from the three blocks
+             this popover replaced — nothing invented, nothing dropped. ── #}
+          <div id="itin-how-built" class="ds-info-pop__panel hidden fade-in" role="group" aria-labelledby="itin-how-built-title">
+            <div class="flex items-start justify-between gap-2">
+              <p id="itin-how-built-title" class="ds-info-pop__title">این برنامه چگونه ساخته شده؟</p>
+              <button type="button" class="ds-info-pop__close" aria-label="بستن" data-info-pop-close>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+            </div>
+            <ul class="mt-2.5 grid gap-2.5">
+              <li class="ds-info-pop__item">
+                <span class="ds-info-pop__icon ds-info-pop__icon--green">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </span>
+                <div class="min-w-0">
+                  <p class="ds-info-pop__item-title ds-info-pop__item-title--green">منبع مکان‌ها</p>
+                  <p class="ds-info-pop__item-text">جاذبه‌های واقعی {{ city.name_fa }} با مختصات ثبت‌شده از OpenStreetMap و ویکی‌پدیا هستند؛ توضیح و تصویر هر مکان به مقالهٔ ویکی‌پدیای همان مکان پیوند شده است.</p>
+                </div>
+              </li>
+              <li class="ds-info-pop__item">
+                <span class="ds-info-pop__icon ds-info-pop__icon--blue">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5" aria-hidden="true"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>
+                </span>
+                <div class="min-w-0">
+                  <p class="ds-info-pop__item-title ds-info-pop__item-title--blue">چیدمان مسیرها</p>
+                  <p class="ds-info-pop__item-text">روزها با خوشه‌بندی جغرافیایی (K-Means) و ترتیب بازدید هر روز با الگوریتم نزدیک‌ترین همسایه تعیین شده است؛ خط‌های نقشه مسیر مستقیم هستند، نه مسیر واقعی خیابان‌ها.</p>
+                </div>
+              </li>
+              <li class="ds-info-pop__item">
+                <span class="ds-info-pop__icon ds-info-pop__icon--red">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                </span>
+                <div class="min-w-0">
+                  <p class="ds-info-pop__item-title ds-info-pop__item-title--red">نقش ترب</p>
+                  <p class="ds-info-pop__item-text">ترب فقط قیمت‌ها را مقایسه می‌کند؛ خرید بلیت تفریحات مستقیماً از سایت <strong>تأمین‌کنندگان</strong> انجام می‌شود و روی نقشهٔ ما فقط مسیر را می‌بینی.</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <span class="inline-flex min-h-[22px] items-center rounded-full bg-soft px-2 py-0.5 text-[10px] font-medium text-muted">{{ place_count | fa_num }} مکان</span>
+        <span class="inline-flex min-h-[22px] items-center rounded-full bg-soft px-2 py-0.5 text-[10px] font-medium text-muted">مسیر بهینه‌شده</span>
+        {% if interests %}
+        <span class="inline-flex min-h-[22px] items-center rounded-full bg-soft px-2 py-0.5 text-[10px] font-medium text-muted">علایق: {{ interests }}</span>
+        {% endif %}
+        {# narrative source badge — the UI tells the truth about AI vs fallback #}
+        {% if narrative_source == "llm" %}
+        <span class="inline-flex min-h-[22px] items-center rounded-full border border-green-500/20 bg-greensoft px-2 py-0.5 text-[10px] font-bold text-greenink">روایت: هوش مصنوعی</span>
+        {% else %}
+        <span class="inline-flex min-h-[22px] items-center rounded-full bg-soft px-2 py-0.5 text-[10px] font-medium text-muted">روایت: برنامهٔ پایه</span>
+        {% endif %}
+      </div>
+    </div>
+    {% if ticketed_places %}
+    {# جمع کف قیمت — ds-price-highlight idiom, compact beside the title,
+       COMPLETED with the capture's PDP anatomy: the price box is paired
+       with a ds-seller-summary (distinct supplier marks + the link) whose
+       ds-seller-list half lives in the suppliers modal — the touchpoint the
+       narrative («برای بلیت روی دکمهٔ «تأمین‌کنندگان» بزن») and the «؟»
+       popover's نقش ترب item already promise by name. ── #}
+    <div class="shrink-0 rounded-lg border border-red-500/25 bg-redsoft px-3.5 py-2 shadow-card">
+      <p class="flex flex-wrap items-baseline gap-x-2 text-redink">
+        <span class="text-[11px]">جمع کف قیمت تفریحات</span>
+        <strong class="whitespace-nowrap text-[20px] font-bold leading-[1.25]">{{ ticketed_places | sum(attribute="lowest_price") | toman }}</strong>
+      </p>
+      <p class="mt-0.5 text-[10px] text-redink">کف قیمتِ {{ ticketed_places | length | fa_num }} جاذبهٔ بلیت‌دار از {{ place_count | fa_num }} مکان · خرید مستقیم از تأمین‌کننده</p>
+      <p class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-red-500/20 pt-1.5">
+        {# the marks are passive identity (who sells these); the handoff
+           itself is per-attraction, inside the modal — a single link here
+           could not honestly choose one supplier for four attractions ── #}
+        {% for agency in ticketed_places | map(attribute="redirect_url") | map("supplier_of") | select | unique %}
+          {% if agency.logo %}
+          <img src="{{ asset_url(agency.logo) }}" alt="" title="{{ agency.name }}"
+               class="h-4 w-4 opacity-90" style="object-fit:contain" loading="lazy">
+          {% else %}
+          <span class="text-[10px] font-bold text-redink">{{ agency.name }}</span>
+          {% endif %}
+        {% endfor %}
+        <button type="button" data-modal-open="#suppliers-modal" aria-haspopup="dialog" aria-expanded="false"
+                class="ms-auto inline-flex min-h-[22px] items-center gap-1 rounded-sm text-[11px] font-bold text-redink underline decoration-red-500/40 underline-offset-4 transition hover:decoration-redink focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/40">
+          مشاهده و خرید از تأمین‌کنندگان
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </button>
+      </p>
+    </div>
+    {% endif %}
+  </div>
+
+  {# ── 2-column layout: narrative + timeline | map ── #}
+  <div class="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)]">
+
+    {# ══ ستون راست در خروجی RTL = ستون اول در DOM: روایت + تایم‌لاین ══ #}
+    <div class="grid gap-4">
+
+      {% for day in days_view %}
+      {% set section = day.section %}
+      <section data-day-card="{{ day.no }}" class="overflow-hidden rounded-lg border border-line bg-fog shadow-card">
+
+        <header class="flex items-start gap-2.5 border-b border-soft px-4 py-3">
+          {# the day as a labeled pill — «روز اول», never a bare digit (user
+             direction); one size up from the stop pills («ایستگاه ۱») #}
+          <span class="mt-0.5 inline-flex h-7 shrink-0 items-center rounded-full px-3 text-[11px] font-bold text-white"
+                style="background:{{ day.color }}" aria-hidden="true">روز {{ day_ordinals.get(day.no, day.no | fa_num) }}</span>
+          <div class="min-w-0 flex-1">
+            <h2 class="truncate text-[15px] font-bold text-ink">
+              {{ section.title if section else "روز " ~ (day.no | fa_num) }}
+            </h2>
+            {# day summary as chips (user direction): count = neutral card,
+               time = the blue time lane; the transit caveat stays plain #}
+            <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <span class="inline-flex min-h-[22px] items-center rounded-full border border-line bg-soft px-2 py-0.5 text-[10px] font-medium text-muted">
+                {{ day.places | length | fa_num }} ایستگاه
+              </span>
+              <span class="inline-flex min-h-[22px] items-center gap-1 rounded-full border border-blue-500/20 bg-bluesoft px-2 py-0.5 text-[10px] font-medium text-blueink">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                حدود {{ ((day.places | map(attribute="est_visit_minutes") | sum) / 60) | round(0, 'common') | int | fa_num }} ساعت
+              </span>
+              <span class="text-[10px] text-muted">بدون احتساب رفت‌وآمد</span>
+            </div>
+          </div>
+        </header>
+
+        {# روایت AI — متن نویسندهٔ برنامه؛ پاراگراف‌ها از قبل ایمن‌سازی شده‌اند (escape خودکار) #}
+        {% if section %}
+        <div class="space-y-3 px-4 py-3.5 text-[13px] leading-6 text-ink">
+          {% for paragraph in section.paragraphs %}
+          <p>{{ paragraph }}</p>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {# تایم‌لاین ایستگاه‌ها — ترتیب همان ترتیب polyline روی نقشه است #}
+        <ol class="border-t border-soft">
+          {% for place in day.places %}
+          <li class="flex cursor-pointer gap-3.5 border-b border-soft py-3.5 pe-4 ps-9 transition last:border-0 hover:bg-soft"
+              data-place-slug="{{ place.slug }}"
+              title="نمایش روی نقشه">
+            {# ── the POI photo tile leads the row (torob product-row thumbnail
+               position; user direction: photos you can actually see) — real
+               photo or the honest Persian-initial fallback, poi_tile.html ── #}
+            {% include "itinerary/partials/poi_tile.html" %}
+            {# the whole row sits ps-9 so the sub-level indents past the day circle #}
+            <div class="min-w-0 flex-1">
+              <p class="flex flex-wrap items-center gap-1.5 text-[13px] font-bold text-ink">
+                {# stop ordinal as a labeled pill — same vocabulary as the map pin
+                   («ایستگاه ۱»), never a bare digit (user direction) #}
+                <span class="inline-flex h-6 shrink-0 items-center rounded-full px-2.5 text-[10px] font-bold text-white"
+                      style="background:{{ day.color }}">ایستگاه {{ loop.index | fa_num }}</span>
+                <span class="truncate">{{ place.name_fa }}</span>
+                <span class="inline-flex min-h-[22px] shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-medium {{ category_lanes.get(place.category, 'border-line bg-soft text-muted') }}">
+                  {{ category_labels.get(place.category, place.category) }}
+                </span>
+              </p>
+              {% if place.description_fa %}
+              <p class="mt-1.5 text-[11px] leading-[1.7] text-muted">{{ place.description_fa }}</p>
+              {% endif %}
+              {# ── the SOURCED line (trust layer): this exact place's Wikipedia
+                 extract, clamped to two lines; the «منبع» link below makes it
+                 verifiable. description_fa above stays the editorial line. ── #}
+              {% if place.summary_fa %}
+              <p class="mt-1 text-[11px] leading-[1.7] text-muted line-clamp-2">{{ place.summary_fa }}</p>
+              {% endif %}
+
+              {# ── one meta row: duration chip (the blue time lane) +, for
+                    ticketed stops, the price highlight and the buy handoff —
+                    خرید = خروج از ترب، مستقیم به سایت فروشنده. Price = the
+                    ds-price-highlight idiom (price_box.html) at stop-card size
+                    — NO tabular-nums, IRANYekanX has none; CTA = the
+                    production torob.com red gradient (.cta-brand). ── #}
+              <div class="mt-2.5 flex flex-wrap items-center gap-2">
+                <span class="inline-flex min-h-[22px] items-center gap-1 rounded-full border border-blue-500/20 bg-bluesoft px-2 py-0.5 text-[10px] font-medium text-blueink">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  {% if place.est_visit_minutes < 60 %}{{ place.est_visit_minutes | fa_num }} دقیقه{% else %}حدود {{ (place.est_visit_minutes / 60) | round(0, 'common') | int | fa_num }} ساعت{% endif %}
+                </span>
+                {% if place.has_ticket and place.redirect_url %}
+                {% if place.lowest_price %}
+                <span class="inline-flex items-center gap-1.5 rounded border border-red-500/25 bg-redsoft px-3 py-2">
+                  <span class="text-[11px] text-redink">کف قیمت</span>
+                  <strong class="whitespace-nowrap text-[16px] font-bold leading-[1.25] text-redink">{{ place.lowest_price | toman }}</strong>
+                </span>
+                {% endif %}
+                {# ── THE handoff is the supplier's own mark (user direction):
+                      the ticket-part logo_tile anatomy, but the TILE IS the
+                      link — no text button. Mark + name from the AGENCIES
+                      registry (supplier_of); unknown hosts (no bundled mark)
+                      fall back to an icon-only red-gradient tile so the
+                      handoff never disappears. ── #}
+                {% set supplier = place.redirect_url | supplier_of %}
+                {% if supplier and supplier.logo %}
+                <a href="{{ place.redirect_url }}" target="_blank" rel="noopener noreferrer"
+                   class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-line bg-white transition hover:border-focus hover:shadow-card active:scale-95 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/40"
+                   aria-label="خرید بلیت از سایت تأمین‌کننده" title="مقایسهٔ قیمت و خرید مستقیم از سایت فروشنده">
+                  <img src="{{ asset_url(supplier.logo) }}" alt=""
+                       class="h-6 w-6" style="object-fit:contain" loading="lazy">
+                </a>
+                {% else %}
+                <a href="{{ place.redirect_url }}" target="_blank" rel="noopener noreferrer"
+                   class="ds-button--red flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition active:scale-95 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/40"
+                   aria-label="خرید بلیت از سایت تأمین‌کننده" title="مقایسهٔ قیمت و خرید مستقیم از سایت فروشنده">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                </a>
+                {% endif %}
+                {% endif %}
+              </div>
+
+              {# ── trust links (enrichment.py): the source article + the
+                 external map — free, key-less, and the page's own map
+                 provider. External <a> is safe inside the clickable row: the
+                 flyTo delegation passes a,button through. ── #}
+              <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-muted">
+                {% if place.source_url %}
+                <a href="{{ place.source_url }}" target="_blank" rel="noopener noreferrer"
+                   class="inline-flex items-center gap-1 rounded-sm transition hover:text-ink focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/40">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  منبع: {{ place.source_name or "ویکی‌پدیا" }}
+                </a>
+                {% endif %}
+                <a href="https://www.openstreetmap.org/?mlat={{ place.lat }}&amp;mlon={{ place.lng }}#map=17/{{ place.lat }}/{{ place.lng }}"
+                   target="_blank" rel="noopener noreferrer"
+                   class="inline-flex items-center gap-1 rounded-sm transition hover:text-ink focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/40">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  مشاهده در نقشهٔ OpenStreetMap
+                </a>
+                {% if place.has_ticket and place.redirect_url %}
+                {# real user reviews live on the supplier's own attraction page —
+                   the same honest outlink as the buy handoff (no API needed;
+                   torob aggregates, the partner carries transactions + reviews) #}
+                <a href="{{ place.redirect_url }}" target="_blank" rel="noopener noreferrer"
+                   class="inline-flex items-center gap-1 rounded-sm transition hover:text-ink focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/40">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  نظرات کاربران در سایت فروشنده
+                </a>
+                {% endif %}
+              </div>
+            </div>
+          </li>
+          {% endfor %}
+        </ol>
+      </section>
+      {% endfor %}
+
+    </div>
+
+    {# ══ نقشه — sticky در دسکتاپ (نقشه + فیلتر روزها همیشه کنار لیست)، پایین
+          در موبایل. top-[60px] = هدر ۴۸ + فاصلهٔ ۱۲. ══ #}
+    <aside class="grid gap-3 lg:sticky lg:top-[60px]">
+      <div class="ds-itin-map-frame overflow-hidden rounded-lg border border-line bg-fog shadow-card">
+        {# ── Day switcher = the map card's header (ds-mode-switch idiom): sized
+              to the map column, one source of truth for the day filter —
+              filters BOTH the timeline cards and the map layers. ── #}
+        <div id="itinerary-daybar" class="border-b border-soft p-2" role="group" aria-label="فیلتر روزهای سفر">
+          <div class="flex items-center gap-1 overflow-x-auto rounded-lg bg-field p-1">
+            <button type="button" data-day="all" aria-pressed="true"
+                    class="inline-flex h-8 shrink-0 items-center rounded-md px-3 text-xs font-bold text-muted transition hover:text-ink aria-pressed:bg-fog aria-pressed:text-ink aria-pressed:shadow-card">همه</button>
+            {% for day in days_view %}
+            <button type="button" data-day="{{ day.no }}" aria-pressed="false"
+                    class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-3 text-xs font-bold text-muted transition hover:text-ink aria-pressed:bg-fog aria-pressed:text-ink aria-pressed:shadow-card">
+              <span class="h-1.5 w-1.5 rounded-full" style="background:{{ day.color }}" aria-hidden="true"></span>
+              روز {{ day_ordinals.get(day.no, day.no | fa_num) }}
+            </button>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="itinerary-map" class="h-[420px] w-full lg:h-[520px]" role="application"
+             aria-label="نقشهٔ مکان‌ها و مسیرهای برنامهٔ سفر {{ city.name_fa }}"
+             data-leaflet-js="{{ asset_url('/static/vendor/leaflet/leaflet.js') }}"
+             data-leaflet-css="{{ asset_url('/static/vendor/leaflet/leaflet.css') }}"
+             data-supercluster-js="{{ asset_url('/static/vendor/supercluster/supercluster.min.js') }}"></div>
+        <p class="border-t border-soft px-3 py-2 text-[10px] text-muted">
+          خط‌چین‌ها مسیر پیشنهادی هر روز هستند · نقشه © OpenStreetMap contributors
+        </p>
+      </div>
+    </aside>
+  </div>
+
+  {# ── the seller-list half of the budget card (capture PDP anatomy) — the
+        «تأمین‌کنندگان» breakdown modal, one handoff row per buyable stop.
+        Static ds-modal: itinerary floors are build-time facts, so there is
+        no live read to make (unlike the flight Compare modal). ── #}
+  {% if buyable_stops %}
+  {% include "itinerary/partials/suppliers_modal.html" %}
+  {% endif %}
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+{# ── The Leaflet feed — same routed plan as the timeline, pre-labeled & JSON-safe
+      (|tojson escapes <>&' so names/URLs cannot break out of the tag). The map
+      and the timeline therefore CANNOT disagree. ── #}
+<script type="application/json" id="itinerary-data">{{ map_payload | tojson }}</script>
+
+{# ── Leaflet chrome overrides stay INLINE on purpose: leaflet.css is injected
+      lazily into <head> — AFTER torob.css — so only rules later in document
+      order can win this specificity tie. The page's own ds-itin-* chrome moved to
+      frontend/torob.src.css (compiled into static/css/torob.css). ── #}
+<style>
+  .leaflet-container { font-family: inherit; }
+  .leaflet-popup-content { margin: 10px 12px; direction: rtl; text-align: right; }
+  .leaflet-popup-content-wrapper {
+    background: var(--bg-fog); color: var(--sky-800);
+    border-radius: .5rem; box-shadow: var(--shadow-md);
+  }
+  .leaflet-popup-tip { background: var(--bg-fog); }
+  .leaflet-popup-close-button { color: var(--sky-500) !important; }
+</style>
+
+{# ── The map module — static/js/itinerary.js (extracted verbatim from this
+      template; the vendored asset URLs ride on #itinerary-map's data-* attrs
+      so the file stays Jinja-free while keeping content-hash cache-busting).
+      fa_digits.js first (TorobFa namespace), then the map — both deferred,
+      execution order preserved. ── #}
+<script src="{{ asset_url('/static/js/fa_digits.js') }}" defer></script>
+<script src="{{ asset_url('/static/js/itinerary.js') }}" defer></script>
+{# the «؟» explainer popover (ds-info-pop) — hover opens, click/tap pins,
+   Esc / outside click / focus-out close #}
+<script src="{{ asset_url('/static/js/info_pop.js') }}" defer></script>
+{# the static «تأمین‌کنندگان» modal — open / X / backdrop / Escape #}
+<script src="{{ asset_url('/static/js/static_modal.js') }}" defer></script>
+{% endblock %}

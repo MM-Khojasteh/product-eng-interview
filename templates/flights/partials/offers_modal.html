@@ -1,0 +1,103 @@
+{# ── The Compare modal — ds-modal geometry from the capture (.ds-modal-backdrop:
+      fixed inset-0, 58% black, centered; .ds-modal: min(500px,100%), radius-md,
+      shadow-md). Swapped into #compare-modal-slot at click time; the data is a
+      LIVE Redis read (offers_for_flight), never the list render — so a tombstone
+      between render and click shows the sold-out state, not a dead deeplink. ── #}
+<div class="ds-modal-backdrop grid"
+     data-modal-root hx-on:click="if (event.target === this) this.remove()">
+  <div role="dialog" aria-modal="true" aria-label="مقایسه قیمت آژانس‌ها"
+       class="fade-in flex max-h-[min(680px,calc(100vh-32px))] w-[min(500px,100%)] flex-col overflow-hidden ds-modal">
+
+    <div class="ds-modal__header px-5 py-4">
+      <div>
+        <h2 class="ds-modal__title text-[15px]">
+          {% if flight %}پرواز {{ airlines[flight.airline].name }} · {{ flight.departs | fa_num }}{% else %}مقایسه قیمت{% endif %}
+        </h2>
+        {% if flight %}
+        <p class="mt-0.5 text-[11px] text-muted">{{ origin_name }} به {{ destination_name }} · {{ flight.datenum | date_fa }}</p>
+        {% endif %}
+      </div>
+      <button type="button" aria-label="بستن"
+              hx-on:click="this.closest('[data-modal-root]').remove()"
+              class="ds-modal__close text-ink">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="h-4 w-4" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="ds-modal__body content-start gap-3 overflow-y-auto p-5">
+
+      {% if refresh_pending and attempt <= max_attempts %}
+      {# ── EXPIRED ≠ SOLD OUT: the route-day hash was cold (TTL 120 s) at click
+            time. A tombstone HDELs a member from a WARM hash — an empty read
+            here carries no sellout meaning. Re-arm the modal like the skeleton
+            (server-driven, bounded polling) while search.request refills it. ── #}
+      <div class="rounded-lg border border-line bg-field px-5 py-8 text-center">
+        {% set message = "در حال به‌روزرسانی قیمت‌های این پرواز…" %}
+        {% include "flights/partials/loading_pill.html" %}
+        <p class="mt-2 text-xs leading-[1.9] text-muted">
+          قیمت‌های این مسیر منقضی شده و در حال بازیابی است؛ چند لحظه صبر کنید.
+        </p>
+        <div hx-get="/flights/{{ flight_ref }}/offers?attempt={{ attempt + 1 }}"
+             hx-target="#compare-modal-slot" hx-swap="innerHTML"
+             hx-trigger="load delay:2s" aria-hidden="true"></div>
+      </div>
+
+      {% elif refresh_pending %}
+      {# ── refresh budget exhausted — honest retry CTA, still NOT a sellout ── #}
+      {% set card_class = "rounded-lg border border-line bg-field px-5 py-8 text-center" %}
+      {% set card_title = "قیمت‌های این پرواز در دسترس نیست" %}
+      {% set card_body = "دریافت قیمت تازه بیش از حد طول کشید؛ لطفاً دوباره جستجو کنید." %}
+      {% set card_body_extra = "leading-[1.9] " %}
+      {% if back_url %}
+      {% set card_href = back_url %}
+      {% set card_cta_hx = true %}
+      {% set card_cta_class = "mt-3 inline-flex h-9 items-center rounded-lg px-4 text-xs font-medium transition" %}
+      {% set card_cta_text = "مشاهدهٔ پروازهای دیگر" %}
+      {% endif %}
+      {% include "flights/partials/unavailable_card.html" %}
+
+      {% elif not best %}
+      {# ── SOLD OUT: every fare for this physical flight was tombstoned (or hit
+            capacity 0) between the list render and this click — the exact
+            "پرواز پر شد" trust-breaker the liveness architecture exists to kill. ── #}
+      <div class="rounded-lg border border-line bg-field px-5 py-8 text-center">
+        {% include "flights/partials/sold_out_pill.html" %}
+        <p class="mt-2 text-xs leading-[1.9] text-muted">
+          ظرفیت این پرواز در لحظهٔ مقایسه به پایان رسیده است. قیمت‌ها به‌سرعت تغییر می‌کنند؛
+          پروازهای دیگر همین مسیر را ببینید.
+        </p>
+        {% if back_url %}
+        <a href="{{ back_url }}" hx-get="{{ back_url }}" hx-target="#flight-results" hx-swap="outerHTML"
+           hx-on:click="this.closest('[data-modal-root]').remove()"
+           class="mt-3 inline-flex h-9 items-center rounded-lg bg-brand px-4 text-xs font-medium text-white transition hover:bg-brand-hover">
+          مشاهدهٔ پروازهای دیگر
+        </a>
+        {% endif %}
+      </div>
+
+      {% else %}
+      {# ── live offers, cheapest first — sold-out agencies sink to the bottom ── #}
+      <div class="ds-price-highlight">
+        <span class="ds-price-highlight__label">کف قیمت میان {{ offer_agencies | fa_num }} آژانس</span>
+        <strong class="ds-price-highlight__amount text-[22px]">{{ best.price | toman }}</strong>
+        <span class="ds-price-highlight__note tabular-nums">برای هر مسافر · به‌روزرسانی در لحظهٔ کلیک از {{ best.agency.name }}</span>
+      </div>
+
+      {# ds-seller-list + «خدمات فروشنده» chips — data-seller-group scopes the
+            client-side filter (search.js §3); rows reset with each HTMX swap #}
+      <div class="grid gap-2" data-seller-group>
+        {% include "flights/partials/offer_chips.html" %}
+        <ul class="grid gap-2">
+          {% for row in offers %}{% include "flights/partials/seller_row.html" %}{% endfor %}
+        </ul>
+        <p data-offer-empty class="hidden text-center text-[10px] text-muted">پیشنهادی مطابق این فیلترها نیست</p>
+      </div>
+
+      <p class="text-[11px] leading-[1.8] text-muted">
+        قیمت‌ها در لحظهٔ کلیک از کش زنده خوانده شده‌اند و ممکن است در سایت آژانس تغییر کنند.
+        <a href="#" class="text-focus transition hover:underline">گزارش مغایرت قیمت</a>
+      </p>
+      {% endif %}
+    </div>
+  </div>
+</div>

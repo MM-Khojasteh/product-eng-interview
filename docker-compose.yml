@@ -1,0 +1,211 @@
+# =====================================================================
+# Flight Ticket Aggregator — local, production-like, zero-cost stack
+#   Kafka (KRaft) :9092   UI :8080
+#   Redis         :6379   UI :5540
+#   PostgreSQL    :5432   UI :5050
+#
+# Every port is published on 127.0.0.1 only: Kafka is PLAINTEXT and Redis
+# has no auth, so they must never be reachable from the LAN.
+# POSTGRES_PASSWORD and PGADMIN_DEFAULT_PASSWORD have no default — set them
+# in .env (cp .env.example .env) or compose refuses to start.
+# =====================================================================
+name: flight-aggregator
+
+services:
+  # ------------------------------------------------------------------
+  # Kafka — single-node KRaft (broker + controller in one process)
+  # ------------------------------------------------------------------
+  kafka:
+    image: confluentinc/cp-kafka:7.9.0
+    container_name: kafka
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9092:9092"          # EXTERNAL listener (host → localhost:9092)
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: "broker,controller"        # KRaft: no Zookeeper
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:29093"
+      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:29092,CONTROLLER://kafka:29093,EXTERNAL://0.0.0.0:9092"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:29092,EXTERNAL://localhost:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      # --- single-node MUSTs (broker defaults are 3) ---
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"        # topics are provisioned by kafka-init
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+      KAFKA_HEAP_OPTS: "-Xmx512m -Xms256m"            # default heap is 1G — reclaim it
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"            # any `kafka-storage random-uuid` value
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:29092 > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 15s
+    networks: [backend]
+
+  # ------------------------------------------------------------------
+  # One-shot topic provisioner (declarative topics, like a real CI)
+  # ------------------------------------------------------------------
+  kafka-init:
+    image: confluentinc/cp-kafka:7.9.0
+    container_name: kafka-init
+    restart: "no"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -euo pipefail
+        BS="kafka:29092"
+        for spec in \
+          "raw_flight_prices 3" \
+          "flight-prices.canonical 3" \
+          "flight-prices.deltas 3" \
+          "search.requests 3" \
+          "price.alerts 1" \
+          "scraper.dlq 1"; do
+          set -- $$spec
+          echo ">> creating topic $$1 (partitions=$$2)"
+          kafka-topics --bootstrap-server "$$BS" --create --if-not-exists \
+            --topic "$$1" --partitions "$$2" --replication-factor 1
+        done
+        echo ">> topics ready:"
+        kafka-topics --bootstrap-server "$$BS" --list
+    networks: [backend]
+
+  # ------------------------------------------------------------------
+  # Redis — cache + price liveness (pure cache profile: no persistence, LRU)
+  #
+  # Every key is derived state (route-day hashes, TTL 60–120 s, rebuilt
+  # at-least-once from Kafka replay) — the design already treats an EMPTY
+  # cache as a first-class state, so losing it on restart costs one rescan
+  # cycle, not data. AOF on a pure cache was pure write amplification (every
+  # HSET fsynced) + fork stalls on rewrites. lazyfree-* keep the 120 s TTL
+  # expiry waves of large hashes off the main thread. volatile-lru ≡ the old
+  # allkeys-lru today (all keys carry TTL) but won't evict future non-TTL
+  # keys. To keep warm-restart durability instead: --appendonly yes
+  # --appendfsync everysec --no-appendfsync-on-rewrite yes.
+  # ------------------------------------------------------------------
+  redis:
+    image: redis:7.4-alpine
+    container_name: redis
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - volatile-lru
+      - --lazyfree-lazy-eviction
+      - "yes"
+      - --lazyfree-lazy-expire
+      - "yes"
+      - --lazyfree-lazy-user-del
+      - "yes"
+      - --lazyfree-lazy-user-flush
+      - "yes"
+      - --tcp-keepalive
+      - "60"
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks: [backend]
+
+  # ------------------------------------------------------------------
+  # PostgreSQL — cold storage, analytics, domain entities
+  # ------------------------------------------------------------------
+  postgres:
+    image: postgres:17-alpine
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      # User/DB defaults match deploy/pgadmin/servers.json; the password has none.
+      POSTGRES_USER: ${POSTGRES_USER:-flight}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env (see .env.example)}
+      POSTGRES_DB: ${POSTGRES_DB:-flights}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks: [backend]
+
+  # ------------------------------------------------------------------
+  # UIs — Kafka UI (Provectus), RedisInsight, pgAdmin
+  # ------------------------------------------------------------------
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local-kraft
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      DYNAMIC_CONFIG_ENABLED: "true"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks: [backend]
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5540:5540"
+    volumes:
+      - redisinsight_data:/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks: [backend]
+
+  pgadmin:
+    image: dpage/pgadmin4:9
+    container_name: pgadmin
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-dev@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:?set PGADMIN_DEFAULT_PASSWORD in .env (see .env.example)}
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./deploy/pgadmin/servers.json:/pgadmin4/servers.json:ro    # auto-registers the DB
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [backend]
+
+volumes:
+  kafka_data:
+  redis_data:
+  postgres_data:
+  pgadmin_data:
+  redisinsight_data:
+
+networks:
+  backend:
+    driver: bridge

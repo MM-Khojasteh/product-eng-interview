@@ -1,0 +1,131 @@
+{# ── Step 2 response: the browse shell — ds-browse-shell with breadcrumbs,
+      ds-browse-toolbar (count + ds-mode-switch sort + mobile filter trigger),
+      the ds-browse-filters rail (flights/partials/filters.html) and the flight cards.
+      Re-renders in place when sorting or filtering changes. #}
+<div id="flight-results" class="rounded-lg border border-line bg-fog shadow-card">
+
+  {# ds-browse-toolbar #}
+  <div class="flex flex-wrap items-end justify-between gap-3 border-b border-soft px-5 pb-4 pt-4">
+    <div>
+      {# ds-breadcrumbs #}
+      <nav aria-label="مسیر" class="ds-breadcrumbs">
+        <a href="/" class="ds-breadcrumbs__link">خانه</a>
+        <span aria-hidden="true">/</span>
+        <a href="{{ results_url }}" class="ds-breadcrumbs__link">پرواز {{ origin_name }} به {{ destination_name }}</a>
+        <span aria-hidden="true">/</span>
+        <span>{{ datenum | date_fa }}</span>
+      </nav>
+      <h2 class="mt-1.5 text-[15px] font-bold text-ink">
+        {{ origin_name }} به {{ destination_name }}
+      </h2>
+      <p class="mt-1 text-xs text-muted">
+        <strong class="text-ink">{{ flights | length | fa_num }} پرواز</strong>
+        {% if filters.is_active %}از {{ all_count | fa_num }}{% endif %}
+        برای {{ datenum | date_fa }} · {{ passengers | fa_num }} مسافر
+      </p>
+    </div>
+
+    <div class="flex items-center gap-2">
+      {# mobile filter trigger (captured mobile-filter-drawer state) #}
+      <button id="filter-open" type="button"
+              class="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-fog px-3 text-xs font-medium text-ink transition hover:bg-soft lg:hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg>
+        فیلترها
+      </button>
+
+      {# ds-mode-switch: sky-50 track; active = white + shadow-sm + sky-800 #}
+      <div class="inline-grid grid-cols-2 gap-1 rounded-lg bg-field p-1" role="group" aria-label="مرتب‌سازی نتایج">
+        <button type="button"
+                hx-get="{{ sort_urls.price }}" hx-target="#flight-results" hx-swap="outerHTML"
+                aria-pressed="{{ 'true' if sort == 'price' else 'false' }}"
+                class="min-h-8 rounded px-3.5 text-xs transition {{ 'bg-fog font-bold text-ink shadow-card' if sort == 'price' else 'text-muted hover:text-ink' }}">
+          ارزان‌ترین
+        </button>
+        <button type="button"
+                hx-get="{{ sort_urls.time }}" hx-target="#flight-results" hx-swap="outerHTML"
+                aria-pressed="{{ 'true' if sort == 'time' else 'false' }}"
+                class="min-h-8 rounded px-3.5 text-xs transition {{ 'bg-fog font-bold text-ink shadow-card' if sort == 'time' else 'text-muted hover:text-ink' }}">
+          زودترین
+        </button>
+      </div>
+
+      {# ── Torob Pay narrow banner — the captured narrow_banner_plp touchpoint
+            from torob.com's /search top-filters row: clover mark +
+            «میخوای قسطی بخری؟» and the «دریافت اعتبار» CTA chip. Desktop-only
+            like the captured TopFiltersDesktop row; ONLY the CTA links out
+            (user direction — a whole-row link hijacks the page). ── #}
+      <div class="hidden items-center gap-2 rounded-full bg-greensoft py-1 ps-3 pe-1 lg:inline-flex">
+        {% set mark_class = "h-5 w-5 shrink-0" %}
+        {% include "components/torob_pay_mark.html" %}
+        <span class="whitespace-nowrap text-xs font-bold text-greenink">میخوای قسطی بخری؟</span>
+        <a href="https://torobpay.com/?utm_source=torob&amp;utm_medium=torob_bilit_plp"
+           aria-label="دریافت اعتبار" title="خرید قسطی با ترب‌پی"
+           class="ds-button--tpay group inline-flex h-7 shrink-0 items-center gap-1 rounded-full px-2.5 text-[11px] font-medium transition">
+          دریافت اعتبار
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3 transition group-hover:-translate-x-0.5" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {# ds-browse-layout: filter rail + results #}
+  <div class="grid items-start gap-4 p-4 lg:grid-cols-[242px_minmax(0,1fr)]">
+    {% include "flights/partials/filters.html" %}
+
+    <div class="min-w-0">
+      {# ds-active-filters #}
+      {% if active_chips %}
+      <div class="mb-3 flex flex-wrap items-center gap-1.5">
+        <span class="text-[11px] text-muted">فیلترهای فعال:</span>
+        {% for chip in active_chips %}
+        <a href="{{ chip.url }}" hx-get="{{ chip.url }}" hx-target="#flight-results" hx-swap="outerHTML"
+           class="ds-chip ds-chip--active inline-flex min-h-[26px] items-center gap-1 rounded border px-2 py-0.5 text-[11px] transition">
+          {{ chip.label }}
+          <span aria-hidden="true" class="text-[9px]">✕</span>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {# id="flight-cards" is the hx-swap-oob beforeend target for flights that
+         stream in via later Alibaba chunks (flights/partials/live_pulse.html) — new
+         cards insert here without re-rendering the shell. #}
+      <div id="flight-cards">
+      {% for flight in flights %}
+        {% include "flights/partials/flight_card.html" %}
+      {% else %}
+        <div class="rounded-lg border border-dashed border-line px-6 py-12 text-center">
+          <p class="text-sm font-bold text-ink">
+            {% if filters.is_active %}پروازی با این فیلترها پیدا نشد.{% else %}پروازی برای این مسیر و تاریخ پیدا نشد.{% endif %}
+          </p>
+          <p class="mt-1 text-xs text-muted">
+            {% if filters.is_active %}می‌توانید فیلترها را تغییر دهید یا انصراف دهید.{% else %}تاریخ یا مسیر دیگری را امتحان کنید.{% endif %}
+          </p>
+          {% if filters.is_active %}
+          <a hx-get="/search/flights/results?{{ filter_qs }}" hx-target="#flight-results" hx-swap="outerHTML"
+             hx-push-url="true" role="button"
+             class="mt-3 inline-flex h-9 items-center rounded-lg bg-focus px-4 text-xs font-medium text-white transition hover:brightness-110">
+            انصراف از فیلترها
+          </a>
+          {% endif %}
+        </div>
+      {% endfor %}
+      </div>
+
+      <p class="mt-3 text-center text-[11px] leading-[1.8] text-muted">
+        قیمت‌ها بر اساس نرخ هر مسافر و به تومان است و در لحظهٔ نهایی ممکن است تغییر کند.
+        برای دیدن قیمت همهٔ آژانس‌ها، روی کادر قیمت هر پرواز بزنید.
+      </p>
+    </div>
+  </div>
+
+  {# ── OOB liveness pulse: every tick re-reads the Redis hash and swaps changed
+        price boxes, INSERTS cards streamed in by later Alibaba chunks
+        (beforeend #flight-cards, filtered identically to this render) and
+        deletes tombstoned cards in place — the shell never re-renders. The
+        endpoint stops re-emitting this div once the scan completes (2 agreeing
+        reads), so polling is server-driven and self-extinguishing. live_qs
+        carries the CURRENT filter state so insertions respect it. ── #}
+  <div id="live-ticker" hx-get="/search/flights/live?{{ live_qs }}"
+       hx-trigger="load delay:3s" hx-swap="none" aria-hidden="true"></div>
+</div>

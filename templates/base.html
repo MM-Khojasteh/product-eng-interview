@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+{# ── Base layout — every component follows Torob's captured design system
+      (torob-design-capture/: ds-header = torob.com's 48px HeaderTop row,
+      ds-field, ds-input, ds-button, ds-modal, ds-footer). ── #}
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}ترب بلیت | جستجو و مقایسه بلیت هواپیما{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}مقایسه قیمت بلیت هواپیما از علی‌بابا، فلای‌تیودی، مستربلیت و سایر آژانس‌ها — با ترب بلیت، ارزان‌ترین بلیت را پیدا کن.{% endblock %}">
+  {# captured torob.com theme-color pair (light fog / dark canvas) #}
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#15202b">
+
+  <script>
+    // Resolve theme before first paint (same system/light/dark states as torob.com).
+    (function () {
+      var t = localStorage.getItem("torob-theme") || "system";
+      var dark = t === "dark" || (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+      document.documentElement.dataset.theme = dark ? "dark" : "light";
+    })();
+  </script>
+
+  {# ── Zero third-party origins: everything (CSS, HTMX, font, favicon) is
+        self-hosted under /static. The old CDN chain (Tailwind Play CDN,
+        unpkg HTMX, Google Fonts) tripped Edge Tracking Prevention, logged a
+        "not for production" warning, and is slow/blocked for users in Iran.
+        Rebuild the CSS after template class changes: bash scripts/build_css.sh ── #}
+  <link rel="icon" type="image/svg+xml" href="{{ asset_url('/static/favicon.svg') }}">
+  <link rel="stylesheet" href="{{ asset_url('/static/css/torob.css') }}">
+  <script src="{{ asset_url('/static/vendor/htmx/htmx.min.js') }}"></script>
+</head>
+
+{# torob.com body base: 14px IRANYekanX, sky-800 text on --bg-bright canvas #}
+<body class="flex min-h-screen flex-col bg-bright text-sm font-sans text-ink antialiased">
+
+  {# ── ds-header: sticky 48px bar (captured layout.headerHeight), bg-fog,
+        1px sky-300 bottom border — torob-simple. Full-width row per the
+        captured .HeaderTop_header (padding:0 40px; justify-content:
+        space-between) — items hug the sides, no centered max-w island
+        (user direction, 2026-10-03). User direction (2026-10-02):
+        the top bar carries the family links (وب‌سایت ترب · ترب‌پی) instead of
+        the brand lockup — the ترب بلیت identity lives in the homepage hero.
+        Still no category nav: a single vertical has no catsMenu. ── #}
+  <header class="sticky top-0 z-40 border-b border-line bg-fog">
+    <div class="flex h-12 items-center justify-between gap-4 px-4 sm:px-10">
+
+      <div class="flex shrink-0 items-center gap-7 text-[13px] font-medium">
+        {# brand colors (user direction): torob red for the main site, Torob Pay
+           leaf green for ترب‌پی — both tokens flip correctly in dark mode #}
+        <a class="inline-flex items-center gap-1 text-logo transition hover:opacity-80" href="https://torob.com">
+          {% set mark_class = "h-4 w-4" %}
+          {% include "components/torob_mark.html" %}
+          وب‌سایت ترب
+        </a>
+        <a class="inline-flex items-center gap-1 text-greenink transition hover:opacity-80" href="https://torobpay.com/?utm_source=torob&amp;utm_medium=torob_bilit_header">
+          {% set mark_class = "h-4 w-4" %}
+          {% include "components/torob_pay_mark.html" %}
+          ترب‌پی
+        </a>
+        {# internal: itinerary planner (MVP = Kish demo seed until PostGIS+pgvector);
+           gradient AI-sparkles glyph (components/ai_spark.html) reads as the
+           AI-planner touchpoint, set apart from the two brand links ── #}
+        <a class="inline-flex items-center gap-1 text-focus transition hover:opacity-80" href="/itinerary" title="برنامهٔ سفر با هوش مصنوعی">
+          {% set mark_class = "h-5 w-5" %}
+          {% set gid = "ai-hdr" %}
+          {% include "components/ai_spark.html" %}
+          برنامهٔ سفر
+        </a>
+      </div>
+
+      <div class="flex shrink-0 items-center gap-1">
+        {# theme picker — opens torob.com's «ظاهر برنامه» modal (captured
+              ThemeSettingsModal); glyphs are the captured feather set #}
+        <button id="theme-toggle" type="button" aria-label="Theme: system" title="تغییر ظاهر برنامه"
+                aria-haspopup="dialog" aria-expanded="false"
+                class="flex h-8 w-8 items-center justify-center rounded-lg text-ink transition hover:bg-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/50">
+          <svg data-icon="system" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          <svg data-icon="light" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden h-5 w-5" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg data-icon="dark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden h-5 w-5" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        {# ds-login-trigger: 28px, sky-500 text, 1px border, radius 8px #}
+        <a href="#" class="inline-flex h-7 min-w-[92px] items-center justify-center rounded-lg border border-line bg-fog px-3 text-xs font-medium text-muted transition hover:text-ink sm:min-w-[110px]">ورود / ثبت‌نام</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex flex-1 flex-col">
+    {% block content %}{% endblock %}
+  </main>
+
+  {# ds-footer: 12px sky-500 links row on fog, anchored to the sides like the
+        captured .footer_footerHome (space-between, 40px side padding) — not a
+        centered island (user direction, 2026-10-03). ONE row, two sides like
+        the header: content-page links at the right edge (start, RTL), the MVP
+        disclaimer pushed to the left edge (end) — no second line, minimal
+        footer height (user direction, 2026-10-03). The family links
+        (وب‌سایت ترب · ترب‌پی) live in the HEADER (user direction, 2026-10-02). #}
+  <footer class="border-t border-line bg-fog">
+    <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 px-4 py-2.5 text-xs text-muted sm:px-10">
+      <nav class="flex flex-wrap items-center gap-x-6 gap-y-1">
+        <a class="transition hover:text-ink" href="/pages/about">درباره ترب بلیت</a>
+        <a class="transition hover:text-ink" href="/pages/faq">سوالات متداول</a>
+        <a class="transition hover:text-ink" href="/pages/terms">قوانین و مقررات</a>
+      </nav>
+      <span class="leading-5 opacity-70">ترب بلیت فقط قیمت‌ها را مقایسه می‌کند؛ صدور بلیت نزد آژانس فروشنده انجام می‌شود. (نسخه نمایشی MVP)</span>
+    </div>
+  </footer>
+
+  {# Compare-modal mount point — offers are fetched FRESH from Redis at click
+     time (hx-get /flights/{ref}/offers), so a tombstone between list render
+     and click renders the sold-out state instead of a dead deeplink. Lives
+     OUTSIDE #results so result swaps never destroy an open modal. #}
+  <div id="compare-modal-slot"></div>
+
+  {# ── «ظاهر برنامه» modal — torob.com's captured ThemeSettingsModal: title,
+        three icon+label options (سیستم/روشن/تاریک), selected = aria-pressed
+        (focus border + soft fill), close X. Same ds-modal geometry as the
+        compare modal; static markup, the theme script below drives it. ── #}
+  <div id="theme-modal" class="ds-modal-backdrop grid hidden"
+       data-modal-root>
+    <div role="dialog" aria-modal="true" aria-label="تغییر ظاهر برنامه"
+         class="fade-in relative w-[min(360px,100%)] ds-modal">
+      <button type="button" aria-label="بستن" data-theme-close
+              class="ds-modal__close absolute right-3.5 top-3 text-muted hover:text-ink">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="h-4 w-4" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      <p class="ds-modal__title border-b border-soft px-4 py-3.5 text-center text-[13px]">ظاهر برنامه</p>
+      <div class="ds-modal__body grid-cols-3 gap-2 p-4">
+        <button type="button" data-theme-opt="system" aria-pressed="false"
+                class="flex flex-col items-center gap-2 rounded-lg border border-transparent px-2 py-3.5 text-muted transition hover:bg-soft aria-pressed:border-focus aria-pressed:bg-soft aria-pressed:text-ink">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-8 w-8" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          <span class="text-xs font-medium">سیستم</span>
+        </button>
+        <button type="button" data-theme-opt="light" aria-pressed="false"
+                class="flex flex-col items-center gap-2 rounded-lg border border-transparent px-2 py-3.5 text-muted transition hover:bg-soft aria-pressed:border-focus aria-pressed:bg-soft aria-pressed:text-ink">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-8 w-8" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <span class="text-xs font-medium">روشن</span>
+        </button>
+        <button type="button" data-theme-opt="dark" aria-pressed="false"
+                class="flex flex-col items-center gap-2 rounded-lg border border-transparent px-2 py-3.5 text-muted transition hover:bg-soft aria-pressed:border-focus aria-pressed:bg-soft aria-pressed:text-ink">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-8 w-8" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <span class="text-xs font-medium">تاریک</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  {% block scripts %}{% endblock %}
+
+  <script src="{{ asset_url('/static/js/theme.js') }}" defer></script>
+</body>
+</html>

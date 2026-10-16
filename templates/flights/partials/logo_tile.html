@@ -1,0 +1,16 @@
+{# ── Brand logo tile — real mark when bundled (static/logos/, see SOURCES.md),
+      colored-initial chip fallback otherwise (QB, iranbilit, unknown live
+      airlines via group_quotes' setdefault). The tile stays WHITE in both
+      themes: brand marks carry their own light backgrounds / dark strokes,
+      and the ds dark-mode token flip would swallow them.
+      Expects (set before include, torob_pay_mark idiom): logo, color,
+      initial, tile_class, img_class. ── #}
+{% if logo %}
+<span class="flex shrink-0 items-center justify-center rounded-md border border-soft {{ tile_class }}"
+      style="background:#fff" aria-hidden="true">
+  <img src="{{ logo }}" alt="" class="{{ img_class }}" style="object-fit:contain" loading="lazy">
+</span>
+{% else %}
+<span class="flex shrink-0 items-center justify-center rounded-md text-[12px] font-bold tracking-wider text-white {{ tile_class }}"
+      style="background-color: {{ color }}" aria-hidden="true">{{ initial }}</span>
+{% endif %}

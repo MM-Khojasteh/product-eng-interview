@@ -1,0 +1,21 @@
+{# ── POI photo tile — the trust-layer visual (enrichment.py): a REAL photo of
+      the actual place when one is bundled (static/poi/, see SOURCES.md —
+      Wikimedia Commons, free licenses only), Persian-initial tile otherwise
+      (the logo_tile fallback idiom: POIs with no Wikipedia article render
+      honestly, never with stock/AI imagery). Expects `place` in scope;
+      optional `poi_tile_px` shrinks the square (100 = the timeline stop
+      rows, 44 = suppliers-modal rows) — the square stays FIXED (no CLS);
+      large tiles self-start so a tall text column never stretches them,
+      small tiles track their row. Credit rides the tooltip; full
+      attribution lives in static/poi/SOURCES.md. ── #}
+{% set px = poi_tile_px | default(100) %}
+{% if place.image_url %}
+<img src="{{ asset_url(place.image_url) }}"
+     alt="{{ place.image_alt_fa or place.name_fa }}"
+     title="{{ place.image_credit or 'عکس: ویکی‌مدیا کامانز' }}"
+     width="{{ px }}" height="{{ px }}" loading="lazy" decoding="async"
+     class="h-[{{ px }}px] w-[{{ px }}px] shrink-0 {{ 'self-start' if px >= 80 else 'self-center' }} rounded-md border border-line bg-field object-cover">
+{% else %}
+<span class="flex h-[{{ px }}px] w-[{{ px }}px] shrink-0 {{ 'self-start' if px >= 80 else 'self-center' }} items-center justify-center rounded-md border border-line bg-field text-[{{ 20 if px >= 80 else 14 }}px] font-bold text-muted"
+      aria-hidden="true">{{ place.name_fa[:1] }}</span>
+{% endif %}

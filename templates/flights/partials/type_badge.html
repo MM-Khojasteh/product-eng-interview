@@ -1,0 +1,5 @@
+{# ── ds-badge — the charter/system flight-type pill. ONE definition for the
+      three former markup copies (results card, PDP summary, seller rows).
+      Expects `charter` (boolean) in the calling context:
+        {% set charter = flight.is_charter %}{% include "flights/partials/type_badge.html" %} ── #}
+{% if charter %}<span class="ds-badge ds-badge--charter">چارتری</span>{% else %}<span class="ds-badge ds-badge--system">سیستمی</span>{% endif %}

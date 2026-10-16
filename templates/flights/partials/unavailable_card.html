@@ -1,0 +1,24 @@
+{# ── unavailable card — the «قیمت‌های این پرواز در دسترس نیست» family: the
+      PDP expired state, the PDP sold-out state (ds-sold-out pill above the
+      title) and the Compare modal's refresh-exhausted state. Wrapper
+      surface/geometry, copy and CTA geometry genuinely differ per site, so
+      they ride explicit parameters (parameterize, don't unify copy):
+        card_class      wrapper utilities (PDP: fog p-10 shadow-card · modal: field px-5 py-8)
+        card_pill       (opt) true → render flights/partials/sold_out_pill.html above the title
+        card_title      the bold line
+        card_body       the muted copy
+        card_body_extra (opt) extra body utilities (leading-[1.9] in the modal)
+        card_href       CTA target
+        card_cta_hx     (opt) true → emit the modal CTA's hx-* re-arm wiring
+        card_cta_class  CTA geometry utilities (mt/h/text size differ per site)
+        card_cta_text   (opt; empty → no CTA) ── #}
+<div class="{{ card_class }}">
+  {% if card_pill %}{% include "flights/partials/sold_out_pill.html" %}{% endif %}
+  <p class="{% if card_pill %}mt-3 {% endif %}text-sm font-bold text-ink">{{ card_title }}</p>
+  <p class="mt-1 text-xs {{ card_body_extra | default('') }}text-muted">{{ card_body }}</p>
+  {% if card_cta_text %}
+  <a href="{{ card_href }}"{% if card_cta_hx %} hx-get="{{ card_href }}" hx-target="#flight-results" hx-swap="outerHTML"
+     hx-on:click="this.closest('[data-modal-root]').remove()"{% endif %}
+     class="ds-button--brand {{ card_cta_class }}">{{ card_cta_text }}</a>
+  {% endif %}
+</div>

@@ -1,0 +1,22 @@
+# Torob Travel — web MVP (FastAPI + Jinja2 + HTMX; CSS prebuilt by scripts/build_css.sh)
+fastapi>=0.111
+uvicorn[standard]>=0.30
+jinja2>=3.1
+# BFF liveness seam (guarded at import — app still runs without them in mock mode):
+jdatetime>=5.0   # Jalali (frontend) → Gregorian (Redis quote:{o}-{d}:{date} keys)
+redis>=5.0       # hot price cache written by pipelines/liveness.py
+orjson>=3.9      # fast JSON for the hottest read (HGETALL parse); stdlib fallback
+# Without confluent-kafka the BFF logs "kafka=OFF" and cache-misses can NOT
+# publish on-demand scan requests (search.requests) — cadence-only refills:
+confluent-kafka>=2.6,<3
+
+# AI Itinerary Planner (/itinerary/{city_code}) — ALL guarded at import; the
+# BFF boots and serves the planner in demo mode without any of them:
+sqlalchemy>=2.0        # Place ORM (itinerary/models.py); missing ⇒ demo seed
+geoalchemy2>=0.15      # PostGIS Geometry('POINT') column; missing ⇒ demo seed
+pgvector>=0.3          # Vector(1536) + cosine_distance; missing ⇒ demo seed
+psycopg[binary]>=3.2   # driver for the itinerary engine
+openai>=1.40           # async narrative + interest embeddings; missing ⇒ fallback text
+httpx[socks]>=0.27     # ALL_PROXY=socks5h://… — LLM gateway behind a local VPN proxy
+scikit-learn>=1.4      # K-Means day clustering; missing ⇒ longitude banding
+

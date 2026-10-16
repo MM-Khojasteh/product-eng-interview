@@ -1,0 +1,79 @@
+{
+  "city_code": "kish",
+  "generated_at": "2026-10-04",
+  "generator": "scripts/enrich_poi_media.py",
+  "pois": {
+    "greek-ship": {
+      "wiki_title": "کشتی یونانی",
+      "lang": "fa",
+      "source_url": "https://fa.wikipedia.org/wiki/%DA%A9%D8%B4%D8%AA%DB%8C_%DB%8C%D9%88%D9%86%D8%A7%D9%86%DB%8C",
+      "source_name": "ویکی‌پدیا",
+      "summary_fa": "کشتی یونانی، یکی از جاذبه‌های گردشگری جزیره کیش است. این کشتی در ۴ مرداد ۱۳۴۵ در نزدیکی روستای باغو به گِل نشست و نتوانست به دریا بازگردد.",
+      "image_alt_fa": "کشتی یونانی، یکی از جاذبه‌های گردشگری جزیره کیش است",
+      "image_url": "/static/poi/greek-ship.jpg",
+      "image_credit": "عکس: Amin Noubahar · ویکی‌مدیا کامانز · CC BY-SA 4.0",
+      "image_page": "https://commons.wikimedia.org/wiki/File:Greek_Ship.jpg"
+    },
+    "harireh": {
+      "wiki_title": "شهر حریره",
+      "lang": "fa",
+      "source_url": "https://fa.wikipedia.org/wiki/%D8%B4%D9%87%D8%B1_%D8%AD%D8%B1%DB%8C%D8%B1%D9%87",
+      "source_name": "ویکی‌پدیا",
+      "summary_fa": "شهر حریره مربوط به سدهٔ ۵ تا ۱۰ ه‍.ق است و در شمال جزیره کیش واقع شده و این اثر در تاریخ ۱ شهریور ۱۳۷۶ با شمارهٔ ثبت ۱۸۸۶ به‌عنوان یکی از آثار ملی ایران به ثبت رسیده‌است.",
+      "image_alt_fa": "شهر باستانی حریره، شهر حریره مربوط به سدهٔ ۵ تا ۱۰ ه‍",
+      "image_url": "/static/poi/harireh.jpg",
+      "image_credit": "عکس: Kamix · ویکی‌مدیا کامانز · CC BY-SA 3.0",
+      "image_page": "https://commons.wikimedia.org/wiki/File:Harireh02.jpg"
+    },
+    "water-sports-pier": {
+      "wiki_title": "021127-TheGrandPier-Kish-IMG 9330-2.jpg",
+      "lang": "commons",
+      "source_url": "https://commons.wikimedia.org/wiki/File:021127-TheGrandPier-Kish-IMG_9330-2.jpg",
+      "source_name": "ویکی‌مدیا کامانز",
+      "image_url": "/static/poi/water-sports-pier.jpg",
+      "image_credit": "عکس: Safa.daneshvar · ویکی‌مدیا کامانز · CC0",
+      "image_page": "https://commons.wikimedia.org/wiki/File:021127-TheGrandPier-Kish-IMG_9330-2.jpg",
+      "image_alt_fa": "تصویر اسکله تفریحی کیش"
+    },
+    "ocean-water-park": {
+      "wiki_title": "Ocean Water Park",
+      "lang": "en",
+      "source_url": "https://en.wikipedia.org/wiki/Ocean_Water_Park",
+      "source_name": "ویکی‌پدیا (انگلیسی)",
+      "image_url": "/static/poi/ocean-water-park.jpg",
+      "image_credit": "عکس: Stephan.dedalus · ویکی‌مدیا کامانز · CC BY-SA 4.0",
+      "image_page": "https://commons.wikimedia.org/wiki/File:Anaconda_2.jpg",
+      "image_alt_fa": "تصویر پارک آبی اوشن"
+    },
+    "coral-beach": {
+      "wiki_title": "Persian gulf,kish island,Coral Coastساحل مرجان جزیره کیش - panoramio.jpg",
+      "lang": "commons",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Persian_gulf,kish_island,Coral_Coast%D8%B3%D8%A7%D8%AD%D9%84_%D9%85%D8%B1%D8%AC%D8%A7%D9%86_%D8%AC%D8%B2%DB%8C%D8%B1%D9%87_%DA%A9%DB%8C%D8%B4_-_panoramio.jpg",
+      "source_name": "ویکی‌مدیا کامانز",
+      "image_url": "/static/poi/coral-beach.jpg",
+      "image_credit": "عکس: mohsen barazandeh ah… · ویکی‌مدیا کامانز · CC BY-SA 3.0",
+      "image_page": "https://commons.wikimedia.org/wiki/File:Persian_gulf,kish_island,Coral_Coast%D8%B3%D8%A7%D8%AD%D9%84_%D9%85%D8%B1%D8%AC%D8%A7%D9%86_%D8%AC%D8%B2%DB%8C%D8%B1%D9%87_%DA%A9%DB%8C%D8%B4_-_panoramio.jpg",
+      "image_alt_fa": "تصویر ساحل مرجانی"
+    },
+    "dolphin-park": {
+      "wiki_title": "Kish Island Dolphin park.jpg",
+      "lang": "commons",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Kish_Island_Dolphin_park.jpg",
+      "source_name": "ویکی‌مدیا کامانز",
+      "image_url": "/static/poi/dolphin-park.jpg",
+      "image_credit": "عکس: Ivan Mlinaric from Slovenia · ویکی‌مدیا کامانز · CC BY 2.0",
+      "image_page": "https://commons.wikimedia.org/wiki/File:Kish_Island_Dolphin_park.jpg",
+      "image_alt_fa": "تصویر دلفیناریوم کیش"
+    },
+    "bird-garden": {
+      "wiki_title": "Kish Island Bird Garden, Persian Gulf, 2014.jpg",
+      "lang": "commons",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Kish_Island_Bird_Garden,_Persian_Gulf,_2014.jpg",
+      "source_name": "ویکی‌مدیا کامانز",
+      "image_url": "/static/poi/bird-garden.jpg",
+      "image_credit": "عکس: PersianDutchNetwork · ویکی‌مدیا کامانز · CC BY-SA 3.0",
+      "image_page": "https://commons.wikimedia.org/wiki/File:Kish_Island_Bird_Garden,_Persian_Gulf,_2014.jpg",
+      "image_alt_fa": "تصویر باغ پرندگان کیش"
+    }
+  }
+}

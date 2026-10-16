@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}{{ meta.title }}{% endblock %}
+{% block meta_description %}{{ meta.description }}{% endblock %}
+
+{% block content %}
+
+{# ── Content page shell — torob.com's /pages/about-us/ family: a single prose
+      column on a fog card (ds-panel geometry), same header/footer chrome.
+      Everything else on the page is text; no app chrome in between. ── #}
+<section class="mx-auto w-full max-w-3xl px-4 pb-16 pt-8 sm:pt-10">
+  <article class="rounded-lg border border-line bg-fog px-5 py-7 shadow-card sm:px-9 sm:py-9">
+
+    <h1 class="text-xl font-bold text-ink">درباره ترب بلیت</h1>
+
+    <h2 class="mt-7 text-[15px] font-bold text-ink">ترب بلیت چیست؟</h2>
+    <p class="mt-2 text-[13px] leading-7 text-muted">
+      ترب بلیت، موتور جستجو و مقایسه قیمت بلیت هواپیما از خانوادهٔ ترب است؛ همان تجربه‌ای که در
+      ترب برای مقایسه قیمت کالاها می‌شناسید، این بار برای پروازهای داخلی. ترب بلیت قیمتِ یک پرواز را از
+      آژانس‌های معتبر فروش بلیت — از جمله علی‌بابا، فلای‌تیودی، مستربلیت و اسنپ‌تریپ — یک‌جا جمع می‌کند
+      تا همان بلیت را با کف قیمت ببینید و از ارزان‌ترین فروشنده بخرید.
+    </p>
+
+    <h2 class="mt-7 text-[15px] font-bold text-ink">ترب بلیت چگونه کار می‌کند؟</h2>
+    <ol class="mt-3 list-decimal space-y-2 pr-5 text-[13px] leading-7 text-muted marker:text-muted">
+      <li>مبدأ، مقصد و تاریخ پرواز را انتخاب کنید.</li>
+      <li>قیمتِ همان پرواز را یک‌جا از آژانس‌های مختلف ببینید؛ یک پرواز، چند قیمت.</li>
+      <li>روی «خرید» بزنید تا مستقیم به سایت همان آژانس بروید.</li>
+      <li>پرداخت و صدور بلیت نزد آژانس فروشنده انجام می‌شود؛ به قیمت بلیت هیچ مبلغی اضافه نمی‌شود.</li>
+    </ol>
+
+    <h2 class="mt-7 text-[15px] font-bold text-ink">تفاوت ترب بلیت با سایت‌های فروش بلیت</h2>
+    <ul class="mt-3 list-disc space-y-2 pr-5 text-[13px] leading-7 text-muted marker:text-muted">
+      <li>ترب بلیت آژانس مسافرتی نیست و خودش بلیت نمی‌فروشد؛ خرید و پرداخت شما در سایت آژانس فروشنده انجام می‌شود.</li>
+      <li>قیمت‌ها مستقیم از آژانس‌ها خوانده می‌شوند و در لحظهٔ کلیک دوباره بررسی می‌شوند تا قیمت نمایش‌داده‌شده همان قیمتی باشد که در سایت آژانس می‌بینید.</li>
+      <li>استفاده از ترب بلیت برای مسافر رایگان است؛ درآمد ترب بلیت از همکاری با آژانس‌هاست، نه از جیب مسافر.</li>
+      <li>مثل ترب، شفافیت اصل اول است: برای هر پرواز یک کارت می‌بینید و همهٔ قیمت‌ها کنار هم قابل مقایسه‌اند.</li>
+    </ul>
+
+    <h2 class="mt-7 text-[15px] font-bold text-ink">وضعیت این نسخه</h2>
+    <p class="mt-2 text-[13px] leading-7 text-muted">
+      نسخهٔ فعلی، نمونهٔ اولیهٔ ترب بلیت است و در حال توسعه؛ ممکن است برخی امکانات (مثل پروازهای خارجی
+      و اعلان قیمت) هنوز اضافه نشده باشند. پیشنهادها و گزارش خطاها همان‌قدر که در ترب ارزش دارند،
+      این‌جا هم برای ما ارزشمندند.
+    </p>
+
+  </article>
+</section>
+
+{% endblock %}

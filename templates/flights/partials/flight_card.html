@@ -1,0 +1,50 @@
+{# ── One flight row — ds-browse-product anatomy (white card, 1px sky-100 border)
+      with the signature ds-price-highlight for کف قیمت. ONE card = ONE physical
+      flight (physical_flight_key); the agencies hide inside the Compare modal.
+      The PRICE BOX is the modal trigger — a precise click target, NOT a
+      whole-card overlay (user direction, 2026-10-16: an inset-0 overlay made
+      every click on the card open the modal). The trigger keeps its href
+      (no-JS/shareable PDP) and gains the HTMX intercept: hx-get loads
+      click-time-revalidated offers into the ds-modal. The OOB liveness pulse
+      re-swaps price_box.html IN PLACE inside this link (matching id), so live
+      price refreshes never re-mount the trigger.
+      id="flight-{{ flight.id }}" is the hx-swap-oob delete target for the
+      liveness pulse (tombstoned cards vanish without a shell re-render), and
+      oob=True (from live_pulse.html) makes the whole card insert beforeend
+      into #flight-cards when its Alibaba chunk lands after the shell paint —
+      same conditional-include idiom as price_box.html. ── #}
+<article id="flight-{{ flight.id }}" {% if oob %}hx-swap-oob="beforeend:#flight-cards"{% endif %} class="group ds-flight-card">
+
+  <div class="ds-flight-card__body grid gap-4 p-3.5 sm:p-4 md:grid-cols-[minmax(0,1.4fr)_minmax(0,2fr)_200px] md:items-center md:gap-6">
+    {# NB: fixed 200px price track — Persian digits are not tabular in IRANYekanX,
+       so an auto-sized track would drift per card. #}
+
+    {# ایرلاین + نوع پرواز #}
+    <div class="ds-flight-card__airline">
+      {% set logo = airlines[flight.airline].logo %}{% set color = airlines[flight.airline].color %}
+      {% set initial = flight.airline %}{% set tile_class = 'h-10 w-10' %}{% set img_class = 'h-8 w-8' %}
+      {% include "flights/partials/logo_tile.html" %}
+      <div class="min-w-0">
+        <p class="truncate text-[13px] font-bold text-ink">{{ airlines[flight.airline].name }}</p>
+        <p class="mt-1 flex flex-wrap items-center gap-1.5">
+          {% set charter = flight.is_charter %}{% include "flights/partials/type_badge.html" %}
+          <span class="text-[11px] text-muted">پرواز {{ flight.flight_no }}</span>
+        </p>
+      </div>
+    </div>
+
+    {# زمان حرکت ← رسیدن #}
+    {% set seg_variant = "card" %}{% include "flights/partials/route_segment.html" %}
+
+    {# کف قیمت — shared with the OOB liveness pulse (flights/partials/price_box.html);
+       WRAPS in the Compare-modal trigger (see header comment) #}
+    <a href="/flights/{{ flight.ref }}"
+       hx-get="/flights/{{ flight.ref }}/offers"
+       hx-target="#compare-modal-slot" hx-swap="innerHTML"
+       hx-disabled-elt="this"
+       class="rounded transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-focus/40 active:scale-[.98]"
+       aria-label="مقایسه قیمت آژانس‌ها — پرواز {{ airlines[flight.airline].name }} ساعت {{ flight.departs | fa_num }}">
+      {% include "flights/partials/price_box.html" %}
+    </a>
+  </div>
+</article>

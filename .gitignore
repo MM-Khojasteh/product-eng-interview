@@ -1,125 +1,239 @@
 # ==========================================================================
-# Torob Travel — strict public-repo policy (least privilege)
+# Torob Travel — .gitignore for a PUBLIC repository (deny-by-default)
 #
-# ONLY source code, public documentation, and explicit public configuration
-# may be committed. Everything else — secrets, private materials, caches,
-# build output, local state — is ignored. Check the matched-but-unexpected
-# with:  git status --porcelain
+# Policy: only source code, public documentation and explicit public
+# configuration are tracked.
+#   • Section 1 blocks secrets everywhere in the tree.
+#   • Section 2 makes the repository ROOT deny-all: a new top-level file or
+#     folder stays private until it is added to the allowlist on purpose.
+#   • Sections 3+ strip caches, build output and local state from inside the
+#     allowlisted folders.
+#   • Section 15 re-asserts the secret rules, because Git applies the LAST
+#     matching rule and a later negation would otherwise re-include them.
+#
+# Audit before every push:
+#   git status --short --ignored        what is tracked vs ignored
+#   git check-ignore -v <path>          which rule matched a path
 # ==========================================================================
 
-# ── 1. SECRETS & ENVIRONMENT — checked first, never commit ─────────────────
+# ── 1. SECRETS & ENVIRONMENT — never commit ────────────────────────────────
 .env
+.env.local
+.env.*.local
 .env.*
 !.env.example
-*.pem
-*.key
-*.pfx
-*.p12
-*.crt
+*.env
+.envrc
+.secrets/
+secrets/
+*.secret
 *.secrets
 secrets*.yml
+secrets*.yaml
+secrets*.json
 credentials*.json
 service-account*.json
+# Keys, certificates, keystores
+*.pem
+*.key
+*.crt
+*.cer
+*.der
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.kdbx
+id_rsa*
+id_ecdsa*
+id_ed25519*
+# Tool credential files
+.netrc
+.pgpass
+.pypirc
+.npmrc
+.htpasswd
+*.kubeconfig
+kubeconfig
+# Browser / proxy captures — they embed cookies, session tokens and the
+# private supplier endpoints
+*.har
+*.saz
+*.pcap
+*.pcapng
+*.mitm
+storage_state*.json
+storageState*.json
+cookies*.json
+.auth/
 
-# ── 2. PRIVATE WORKING MATERIALS — never publish (IP) ──────────────────────
+# ── 2. ROOT ALLOWLIST — the top level is private unless listed here ────────
+/*
+!/.gitignore
+!/.gitattributes
+!/.editorconfig
+!/.dockerignore
+!/.env.example
+!/.github/
+!/README.md
+!/LICENSE
+!/Dockerfile
+!/docker-compose.yml
+!/docker-compose.pipeline.yml
+!/main.py
+!/pytest.ini
+!/requirements/
+!/frontend/
+!/deploy/
+!/pipelines/
+!/scripts/
+!/src/
+!/static/
+!/templates/
+!/tests/
+
+# ── 3. PRIVATE WORKING MATERIALS (IP) — stay private even if allowlisted ───
 # Internal blueprint, reverse-engineering research, design-system capture,
-# working notes, verification screenshots, agent state.
+# pitch decks, working notes, verification screenshots, refactor snapshots.
 docs/
 research/
 torob-design-capture/
-notes - Ticket/
-notes - Itinerary Planner/
+presentation/
+notes - */
 verification-artifacts/
-.claude/
+.refactor-backup/
 .verify/
+# Private exports and office documents
+*.docx
+*.doc
+*.xlsx
+*.pptx
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
 
-# Duplicate source artwork; the served copy is under src/app/static/icon/
-/icon/
+# ── 4. AI ASSISTANT / AGENT STATE ──────────────────────────────────────────
+.claude/
+.cursor/
+.codex/
+.agents/
+.aider*
+.continue/
+.windsurf/
 
-# ── 3. PYTHON — bytecode, caches, tooling state ────────────────────────────
+# ── 5. PYTHON — bytecode, caches, tooling state ────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.pyd
 .Python
 .pytest_cache/
 .mypy_cache/
+.dmypy.json
+dmypy.json
 .ruff_cache/
 .pytype/
 .pyre/
 .cache/
 .hypothesis/
+.benchmarks/
 .tox/
 .nox/
 .coverage
 .coverage.*
 coverage.xml
+*.cover
 htmlcov/
+.ipynb_checkpoints/
+*.prof
+*.lprof
+pip-log.txt
+pip-delete-this-directory.txt
 
-# ── 4. PYTHON — build & packaging output ───────────────────────────────────
+# ── 6. PYTHON — build & packaging output ───────────────────────────────────
 build/
 dist/
+wheels/
 *.egg-info/
 *.egg
+*.whl
 .eggs/
-wheels/
 .installed.cfg
+__pypackages__/
 
-# ── 5. VIRTUAL ENVIRONMENTS ────────────────────────────────────────────────
+# ── 7. VIRTUAL ENVIRONMENTS & INTERPRETER PINS ─────────────────────────────
 .venv/
 venv/
 env/
 ENV/
+.virtualenv/
+.conda/
+.python-version
 
-# ── 6. FRONTEND TOOLING (tailwind via npx — no JS project expected) ────────
+# ── 8. FRONTEND TOOLING ────────────────────────────────────────────────────
+# Tailwind runs via npx (scripts/build_css.sh) — there is no JS project. The
+# compiled static/css/torob.css IS tracked on purpose so the UI renders
+# without a Node toolchain. Adding a package.json? Allowlist it and its
+# lockfile in section 2.
 node_modules/
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
+.npm/
+.yarn/
+.pnpm-store/
+.parcel-cache/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# ── 7. BROWSER TEST OUTPUT ─────────────────────────────────────────────────
+# ── 9. BROWSER TEST OUTPUT ─────────────────────────────────────────────────
 playwright-report/
 test-results/
 blob-report/
+playwright/.cache/
 
-# ── 8. LICENSED FONT BINARIES — do not redistribute ────────────────────────
-# IRANYekanX is a licensed third-party typeface; the woff2 must not be
-# redistributed in a public repository. static/fonts/README.md explains how
-# to restore it locally; the UI falls back gracefully without it.
-static/fonts/*.woff2
-static/fonts/*.woff
-static/fonts/*.ttf
-static/fonts/*.otf
-static/fonts/*.eot
+# ── 10. LICENSED FONT BINARIES — do not redistribute ───────────────────────
+# IRANYekanX is a licensed third-party typeface. static/fonts/README.md
+# explains how to restore it locally; the UI falls back gracefully.
+/static/fonts/*
+!/static/fonts/README.md
 
-# ── 9. RUNTIME ARTIFACTS — logs, spool, local data ─────────────────────────
+# ── 11. RUNTIME ARTIFACTS — logs, spool, local data, dumps ─────────────────
 *.log
 logs/
+nohup.out
+*.pid
 *.tmp
 *.temp
-*.pid
+*.bak
+*.orig
+*.rej
 .spool/
 *.sqlite
 *.sqlite3
 *.db
-core
+*.dump
+*.sql.gz
+*.rdb
+*.aof
+core.[0-9]*
 *.stackdump
 *.hprof
+*.heapsnapshot
 
-# ── 10. LOCAL DEVELOPMENT LAUNCHERS ────────────────────────────────────────
-/setup.bat
-/setup.sh
-
-# ── 11. OS-GENERATED FILES ─────────────────────────────────────────────────
+# ── 12. OS-GENERATED FILES ─────────────────────────────────────────────────
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
+.Trashes
 .Trash-*
+.directory
+.fuse_hidden*
+.nfs*
 Thumbs.db
 Thumbs.db:ignore
 ehthumbs.db
@@ -128,9 +242,31 @@ $RECYCLE.BIN/
 *.lnk
 ~$*
 
-# ── 12. IDE / EDITOR CONFIGURATION ─────────────────────────────────────────
+# ── 13. IDE / EDITOR CONFIGURATION ─────────────────────────────────────────
 .idea/
 .vscode/
-*.code-workspace
-.history/
+.vs/
 .fleet/
+.zed/
+.history/
+*.code-workspace
+*.sublime-project
+*.sublime-workspace
+*.suo
+*.user
+*.swp
+*.swo
+*~
+
+# ── 14. LOCAL CONTAINER OVERRIDES ──────────────────────────────────────────
+docker-compose.override.yml
+compose.override.yml
+
+# ── 15. FINAL GUARD — re-assert secrets after every negation above ─────────
+.env
+.env.*
+!.env.example
+*.env
+*.pem
+*.key
+*.har

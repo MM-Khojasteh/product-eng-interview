@@ -1,0 +1,19 @@
+# LF in the repository AND in every checkout. With core.autocrlf=true on
+# Windows, shell scripts would otherwise be checked out with CRLF — bash
+# (and the Linux containers) reject those.
+* text=auto eol=lf
+
+# Binary assets — never normalized or text-diffed.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
+
+# Vendored third-party code and the compiled stylesheet: collapsed in
+# diffs and excluded from language statistics.
+static/vendor/**     linguist-vendored -diff
+static/css/torob.css linguist-generated -diff

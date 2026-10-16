@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}پرواز {{ flight.origin }} به {{ flight.destination }} | ترب بلیت{% endblock %}
+
+{% block content %}
+
+{% if not flight %}
+{# ── not-found state ── #}
+<section class="mx-auto w-full max-w-6xl px-4 py-16">
+  <div class="rounded-lg border border-line bg-fog p-10 text-center shadow-card">
+    <p class="text-sm font-bold text-ink">این پرواز دیگر موجود نیست.</p>
+    <p class="mt-1 text-xs text-muted">ممکن است ظرفیت آن به پایان رسیده باشد؛ دوباره جستجو کنید.</p>
+    <a href="/"
+       class="ds-button--brand mt-4 inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium transition">جستجوی پرواز</a>
+  </div>
+</section>
+{% elif refresh_pending %}
+{# ── expired state: the route-day hash went cold (TTL) at visit time — NOT a
+      tombstone (liveness.py HDELs members from a WARM hash), so never claim
+      «ظرفیت تکمیل شد» here. Honest re-search CTA; the Compare modal path does
+      bounded auto-repolling. ── #}
+<section class="mx-auto w-full max-w-6xl px-4 py-16">
+  {% set card_class = "rounded-lg border border-line bg-fog p-10 text-center shadow-card" %}
+  {% set card_title = "قیمت‌های این پرواز در دسترس نیست" %}
+  {% set card_body = "قیمت‌های این مسیر منقضی شده است؛ دوباره جستجو کنید تا قیمت‌های زنده دریافت شود." %}
+  {% set card_href = results_url | default('/') %}
+  {% set card_cta_class = "mt-4 inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium transition" %}
+  {% set card_cta_text = "مشاهدهٔ پروازهای دیگر" %}
+  {% include "flights/partials/unavailable_card.html" %}
+</section>
+{% elif not best %}
+{# ── sold-out state: the flight exists but every fare was tombstoned / hit
+      capacity 0 at click time (liveness.py HDEL) — «ظرفیت تکمیل شد». ── #}
+<section class="mx-auto w-full max-w-6xl px-4 py-16">
+  {% set card_class = "rounded-lg border border-line bg-fog p-10 text-center shadow-card" %}
+  {% set card_pill = true %}
+  {% set card_title = "این پرواز در لحظهٔ مشاهده ظرفیت باقی‌مانده ندارد." %}
+  {% set card_body = "قیمت‌ها به‌سرعت تغییر می‌کنند؛ پروازهای دیگر همین مسیر را ببینید." %}
+  {% set card_href = results_url | default('/') %}
+  {% set card_cta_class = "mt-4 inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium transition" %}
+  {% set card_cta_text = "مشاهدهٔ پروازهای دیگر" %}
+  {% include "flights/partials/unavailable_card.html" %}
+</section>
+{% else %}
+
+<section class="mx-auto w-full max-w-6xl px-4 pb-16 pt-6">
+
+  {# ds-breadcrumbs #}
+  <nav aria-label="مسیر" class="ds-breadcrumbs">
+    <a href="/" class="ds-breadcrumbs__link">خانه</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ results_url }}" class="ds-breadcrumbs__link">پرواز {{ origin_name }} به {{ destination_name }}</a>
+    <span aria-hidden="true">/</span>
+    <span>{{ airlines[flight.airline].name }} {{ flight.departs | fa_num }}</span>
+  </nav>
+
+  <h1 class="mt-2 text-[22px] font-extrabold leading-[1.35] text-ink sm:text-[26px]">
+    پرواز {{ origin_name }} به {{ destination_name }}، {{ airlines[flight.airline].name }}
+  </h1>
+  <p class="mt-1 text-xs text-muted">
+    {{ flight.datenum | date_fa }} · مقایسه قیمت از {{ agencies | length | fa_num }} آژانس، مرتب‌شده از ارزان‌ترین
+  </p>
+
+  {# ds-product-evaluation: summary + specs + history | offers #}
+  <div class="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,.82fr)_minmax(0,1.18fr)]">
+
+    {# ── ستون ارزیابی: خلاصه پرواز + مشخصات + روند قیمت ── #}
+    <div class="grid gap-4 lg:sticky lg:top-[76px]">
+
+      {# خلاصه پرواز #}
+      <div class="rounded-lg border border-line bg-fog p-5 shadow-card">
+        <div class="flex items-center gap-3">
+          {% set logo = airlines[flight.airline].logo %}{% set color = airlines[flight.airline].color %}
+          {% set initial = flight.airline %}{% set tile_class = 'h-10 w-10' %}{% set img_class = 'h-8 w-8' %}
+          {% include "flights/partials/logo_tile.html" %}
+          <p class="text-[13px] font-bold text-ink">{{ airlines[flight.airline].name }}</p>
+          {% set charter = flight.is_charter %}{% include "flights/partials/type_badge.html" %}
+        </div>
+
+        {% set seg_variant = "pdp" %}{% set seg_extra = "mt-5" %}{% include "flights/partials/route_segment.html" %}
+      </div>
+
+      {# ds-detail-surface: مشخصات پرواز (ds-spec-list) #}
+      <div class="rounded-lg border border-line bg-fog p-4 shadow-card">
+        <div class="flex min-h-[26px] items-center justify-between">
+          <h2 class="text-[13px] font-bold text-ink">مشخصات پرواز</h2>
+          <span class="text-[11px] text-muted">{{ flight.flight_no }}</span>
+        </div>
+        <dl class="mt-3 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 text-[11px]">
+          <dt class="text-muted">ایرلاین</dt><dd class="text-ink">{{ airlines[flight.airline].name }}</dd>
+          <dt class="text-muted">شماره پرواز</dt><dd class="text-ink" dir="ltr">{{ flight.flight_no }}</dd>
+          <dt class="text-muted">مبدأ</dt><dd class="text-ink">{{ flight.origin }}</dd>
+          <dt class="text-muted">مقصد</dt><dd class="text-ink">{{ flight.destination }}</dd>
+          <dt class="text-muted">تاریخ</dt><dd class="tabular-nums text-ink">{{ flight.datenum | date_fa }}</dd>
+          <dt class="text-muted">ساعت حرکت</dt><dd class="tabular-nums text-ink">{{ flight.departs | fa_num }}</dd>
+          <dt class="text-muted">ساعت رسیدن</dt><dd class="tabular-nums text-ink">{{ flight.arrives | fa_num }}</dd>
+          <dt class="text-muted">مدت پرواز</dt><dd class="text-ink">{{ flight.duration_text }}</dd>
+          <dt class="text-muted">نوع پرواز</dt><dd class="text-ink">{% if flight.is_charter %}چارتری{% else %}سیستمی{% endif %}</dd>
+        </dl>
+      </div>
+
+      {# ds-price-history: روند قیمت ۷ روز — mock-mode only (MOCK SEAM); live
+            mode hides it until the PG hourly-rollup source lands (roadmap).
+            Fabricated history must never render next to live prices. #}
+      {% if history %}
+      <div class="rounded-lg border border-line bg-fog p-4 shadow-card">
+        <div class="flex min-h-[26px] items-center justify-between">
+          <h2 class="text-[13px] font-bold text-ink">روند قیمت</h2>
+          <span class="text-[11px] text-muted">۷ روز گذشته</span>
+        </div>
+        <div class="mt-3 flex h-[72px] items-end gap-1.5 rounded border border-blue-500/15 bg-bluesoft p-2" dir="ltr" aria-hidden="true">
+          {% for point in history %}
+          <span class="min-w-[4px] flex-1 rounded-t {{ 'bg-green-500' if point.price == flight.min_price else 'bg-focus' }}"
+                style="height: {{ point.height }}%"></span>
+          {% endfor %}
+        </div>
+        <p class="mt-2 flex justify-between text-[10px] text-muted" dir="ltr">
+          <span>۷ روز قبل</span><span>امروز</span>
+        </p>
+        <p class="mt-1.5 text-[11px] text-muted">
+          کف قیمت ثبت‌شده: <strong class="text-ink">{{ flight.min_price | toman }}</strong>
+        </p>
+      </div>
+      {% endif %}
+    </div>
+
+    {# ── ستون خرید: کف قیمت + آفرهای آژانس‌ها + پروازهای مشابه ── #}
+    <div class="grid gap-4">
+
+      {# ds-price-highlight بزرگ — click-time live floor, not the list-render price #}
+      <div class="ds-price-highlight ds-price-highlight--pdp">
+        <span class="ds-price-highlight__label">کف قیمت میان {{ live_count | fa_num }} آژانس</span>
+        <strong class="ds-price-highlight__amount text-[26px]">{{ best.price | toman }}</strong>
+        <span class="ds-price-highlight__note">برای هر مسافر · ارزان‌ترین پیشنهاد از {{ best.agency.name }}</span>
+      </div>
+
+      {# آفرهای آژانس‌ها — ds-seller-list (shared rows with the Compare modal;
+            sold-out agencies sink to the bottom with «ظرفیت تکمیل شد») #}
+      <div class="rounded-lg border border-line bg-fog p-4 shadow-card sm:p-5">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-soft pb-3">
+          <h2 class="text-[15px] font-bold text-ink">خرید از کدام آژانس؟</h2>
+          <p class="text-[11px] text-muted">{{ live_count | fa_num }} آژانس · مرتب‌شده از ارزان‌ترین</p>
+        </div>
+
+        {# ds-seller-list + «خدمات فروشنده» chips — data-seller-group scopes the
+              client-side filter (search.js §3) #}
+        <div class="mt-3 grid gap-2" data-seller-group>
+          {% include "flights/partials/offer_chips.html" %}
+          <ul id="seller-list" class="grid gap-2">
+            {% for row in agencies %}{% include "flights/partials/seller_row.html" %}{% endfor %}
+          </ul>
+          <p data-offer-empty class="hidden text-center text-[10px] text-muted">پیشنهادی مطابق این فیلترها نیست</p>
+        </div>
+
+        <p class="mt-3 text-[11px] leading-[1.8] text-muted">
+          با انتخاب «خرید» به سایت آژانس منتقل می‌شوید؛ قیمت‌ها ممکن است در لحظهٔ نهایی تغییر کنند.
+          <a href="#" class="text-focus transition hover:underline">گزارش مغایرت قیمت</a>
+        </p>
+      </div>
+
+      {# پروازهای مشابه — ds-similar-row #}
+      {% if similar %}
+      <div class="rounded-lg border border-line bg-fog p-4 shadow-card sm:p-5">
+        <div class="flex min-h-[26px] items-center justify-between">
+          <h2 class="text-[13px] font-bold text-ink">پروازهای دیگر این مسیر</h2>
+          <a href="{{ back_url }}" class="text-[11px] text-focus transition hover:underline">همهٔ پروازها</a>
+        </div>
+        <ul id="similar-list" class="mt-2 grid gap-1">
+          {% for f in similar %}
+          <li>
+            <a href="/flights/{{ f.ref }}"
+               class="grid grid-cols-[38px_minmax(0,1fr)_auto] items-center gap-2.5 rounded-lg px-1 py-2 transition hover:bg-soft">
+              {% set logo = airlines[f.airline].logo %}{% set color = airlines[f.airline].color %}
+              {% set initial = f.airline %}{% set tile_class = 'h-8 w-[38px]' %}{% set img_class = 'h-6 w-7' %}
+              {% include "flights/partials/logo_tile.html" %}
+              <span class="grid min-w-0 gap-0.5">
+                <strong class="truncate text-[11px] text-ink">{{ airlines[f.airline].name }} · {{ f.departs | fa_num }}</strong>
+                <small class="text-[10px] text-muted">{{ f.duration_text }} · از {{ f.agency_count | fa_num }} آژانس</small>
+              </span>
+              <span class="whitespace-nowrap text-[11px] font-bold tabular-nums text-ink">{{ f.min_price | toman }}</span>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{# the offer-chips filter (§3) is document-delegated in search.js — the PDP
+   seller list needs the same handler the results page loads; the calendar /
+   traveler popovers null-guard, so the include is inert for them here. #}
+<script src="{{ asset_url('/static/js/fa_digits.js') }}" defer></script>
+  <script src="{{ asset_url('/static/js/search.js') }}" defer></script>
+{% endblock %}

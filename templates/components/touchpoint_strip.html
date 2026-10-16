@@ -1,0 +1,38 @@
+{# ── Touchpoint strip — the shared anatomy of the promo notices under the
+      search area (torob.com's captured «میخوای قسطی بخری؟» touchpoint family,
+      references/routes/01-search.html): a soft tinted notice row — no border,
+      no shadow, never competing with the search card — with an icon tile, a
+      bold lead + muted body, and ONE pill CTA. ONLY the CTA links out (user
+      direction) — a whole-row link hijacks the page.
+
+      strip_variant: "ai"   = action-blue planner lane (bg-bluesoft/blueink,
+                                bg-focus CTA — blue is the utility-action lane;
+                                icon = the luminous ai_spark.html gradient
+                                glyph, strip_gid keeps its defs ids unique)
+                     "tpay" = leaf-green credit lane (bg-greensoft/greenink +
+                                the captured .tpay-cta chip and clover mark)
+      Context: strip_lead, strip_body, strip_cta, strip_href,
+               strip_cta_label, strip_cta_title (opt), strip_extra (wrapper
+               margin, default mt-2), strip_gid (ai variant, opt). ── #}
+<div class="{{ strip_extra | default('mt-2') }} flex items-center justify-between gap-x-4 rounded-lg {{ 'bg-greensoft' if strip_variant == 'tpay' else 'bg-bluesoft' }} px-4 py-2.5">
+  <div class="flex min-w-0 flex-1 items-center gap-2.5">
+    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line bg-fog {{ 'text-greenink' if strip_variant == 'tpay' else 'text-focus' }}" aria-hidden="true">
+      {% if strip_variant == "tpay" %}
+      {% set mark_class = "h-5 w-5" %}{% include "components/torob_pay_mark.html" %}
+      {% else %}
+      {% set mark_class = "h-5 w-5" %}{% set gid = strip_gid | default('ai-strip') %}{% include "components/ai_spark.html" %}
+      {% endif %}
+    </span>
+    {# one line, always: the lead+body ellipsize when the viewport is too
+       narrow — the CTA never wraps below (user direction) #}
+    <p class="min-w-0 truncate text-xs leading-5">
+      <span class="text-[13px] font-bold {{ 'text-greenink' if strip_variant == 'tpay' else 'text-blueink' }}">{{ strip_lead }}</span>
+      <span class="text-muted"> {{ strip_body }}</span>
+    </p>
+  </div>
+  <a href="{{ strip_href }}" aria-label="{{ strip_cta_label }}" title="{{ strip_cta_title | default(strip_cta_label) }}"
+     class="group inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-3 text-xs font-medium text-white transition {{ 'ds-button--tpay' if strip_variant == 'tpay' else 'bg-focus hover:opacity-80' }}">
+    {{ strip_cta }}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5 transition group-hover:-translate-x-0.5" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+  </a>
+</div>
