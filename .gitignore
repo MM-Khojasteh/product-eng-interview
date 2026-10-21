@@ -84,6 +84,8 @@ cookies*.json
 !/pytest.ini
 !/requirements/
 !/frontend/
+!/showcase/
+!/project-presentation/
 !/deploy/
 !/pipelines/
 !/scripts/

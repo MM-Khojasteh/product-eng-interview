@@ -4,6 +4,8 @@ Persian-first travel MVP: live flight price comparison over scraped Iranian
 OTAs (FlyToday, Alibaba) plus an AI day-planner. FastAPI + Jinja2 + HTMX web
 app, Kafka ingestion pipeline, Redis hot cache, Postgres history.
 
+See the [product screenshots](showcase/) for selected views of the implemented UI.
+
 ## Requirements
 
 - Python 3.11+
